@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7.4
+    container_name: redis-multidb
+    ports:
+      - "6379:6379"
+    command: [
+      "redis-server",
+      "--databases", "3",
+      "--save", "",
+      "--appendonly", "no",
+      "--maxmemory-policy", "allkeys-lru"
+    ]
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: '06241234'
+      MYSQL_DATABASE: solarize
+      MYSQL_USER: solarize
+      MYSQL_PASSWORD: '06241234'
+    ports:
+      - "3307:3306"   # Exposta na porta 3307
+    volumes:
+      - ./mysql-init:/docker-entrypoint-initdb.d   # Scripts de inicialização
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
