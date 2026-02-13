@@ -1,0 +1,321 @@
+{
+  "name": "whatsapp-bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f89129b1-b679-4b45-a2bc-e4f029a30f89",
+      "name": "Webhook",
+      "webhookId": "7f0d922b-7697-4862-b8a9-800a106d7e48"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5d886039-aa12-42cb-8c08-efe3ec2c4848",
+              "name": "session",
+              "value": "={{ $json.body.session }}",
+              "type": "string"
+            },
+            {
+              "id": "7e9a88ed-bc54-40cd-a196-570ccac03024",
+              "name": "pushName",
+              "value": "={{ $json.body.payload._data.Info.PushName }}",
+              "type": "string"
+            },
+            {
+              "id": "a23027f6-c7d5-4608-bcf1-5e06f1ca01c9",
+              "name": "payloadId",
+              "value": "={{ $json.body.payload.id }}",
+              "type": "string"
+            },
+            {
+              "id": "b32ec8ce-5def-4fa3-98c4-8aab350899a1",
+              "name": "body.event",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            },
+            {
+              "id": "bfe36691-dcc7-4938-99d4-4eb05f769087",
+              "name": "message",
+              "value": "={{ $json.body.payload._data.Message.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "335eab88-854a-4e79-92f3-c51af61c0188",
+              "name": "fromMe",
+              "value": "={{ $json.body.payload.fromMe }}",
+              "type": "boolean"
+            },
+            {
+              "id": "cc01685d-5e4f-499d-a0ed-95cfea6e1a40",
+              "name": "chatId",
+              "value": "={{ $json.body.payload.from }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "46ac7e54-eb70-4032-a990-a2021f9d08eb",
+      "name": "Messag Data"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.event }}",
+                    "rightValue": "message",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b1c93f71-f327-4c4e-a2a1-c80b569a2b7b"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0362ea00-4894-409c-a527-1602729bcba9",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Esta é a mensagem do {{ $json.pushName }}: {{ $json.message }}",
+        "options": {
+          "systemMessage": "Esta é a mensagem de um usuário do nosso System. Haja como um secretário que será responsável por lidar com os clientes a partir de dados e chamadas de um portal de um sistema de CRM de Instalação de Placas Solares chamada Solar System."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        704,
+        0
+      ],
+      "id": "9a95fa59-f43f-400b-8ee2-f917f196e958",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        592,
+        208
+      ],
+      "id": "34e35484-0efd-4af0-8da3-cb102ab226b8",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "vufQuttebhMUFCDs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.chatId }}",
+        "sessionTTL": 3600,
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        720,
+        208
+      ],
+      "id": "430a9a00-6d46-4a5f-b5ae-1c54d5638b08",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "OX3Y4KKUxfjy4iX8",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Seen",
+        "session": "={{ $('Switch').item.json.session }}",
+        "chatId": "={{ $('Switch').item.json.chatId }}",
+        "messageId": "={{ $('Switch').item.json.payloadId }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "8765d22e-43f6-4bdd-a856-0982963758a9",
+      "name": "Send Seen",
+      "credentials": {
+        "wahaApi": {
+          "id": "9j7lU2CkkdwjGcVk",
+          "name": "WAHA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('Switch').item.json.session }}",
+        "chatId": "={{ $('Switch').item.json.chatId }}",
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "linkPreview": "=",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-waha.WAHA",
+      "typeVersion": 202411,
+      "position": [
+        1264,
+        0
+      ],
+      "id": "7306bfb2-23db-4ee4-8dfe-41803382240f",
+      "name": "Send a text message",
+      "credentials": {
+        "wahaApi": {
+          "id": "9j7lU2CkkdwjGcVk",
+          "name": "WAHA account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Messag Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Messag Data": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Seen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Seen": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bbb93cf1-4421-4abd-b9b4-4362fb69a99d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8dff8567851423d901f4cfa7014716a8f7c8748a55996052d32d2e3302e91d38"
+  },
+  "id": "nDvSLEfkF4WbTgGcHq66a",
+  "tags": []
+}
