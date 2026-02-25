@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp-bot",
+  "name": "Bot Solar - Arquitetura Corrigida",
   "nodes": [
     {
       "parameters": {
@@ -10,58 +10,40 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        -2448,
+        1280
       ],
-      "id": "f89129b1-b679-4b45-a2bc-e4f029a30f89",
-      "name": "Webhook",
-      "webhookId": "7f0d922b-7697-4862-b8a9-800a106d7e48"
+      "id": "5f6619e4-e13f-4611-be75-04404c4ec613",
+      "name": "Webhook (Entrada)",
+      "webhookId": "f6c0b953-277e-43a0-b74f-d6ee3eed6da6"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "5d886039-aa12-42cb-8c08-efe3ec2c4848",
-              "name": "session",
-              "value": "={{ $json.body.session }}",
-              "type": "string"
-            },
-            {
-              "id": "7e9a88ed-bc54-40cd-a196-570ccac03024",
-              "name": "pushName",
-              "value": "={{ $json.body.payload._data.Info.PushName }}",
-              "type": "string"
-            },
-            {
-              "id": "a23027f6-c7d5-4608-bcf1-5e06f1ca01c9",
-              "name": "payloadId",
-              "value": "={{ $json.body.payload.id }}",
-              "type": "string"
-            },
-            {
-              "id": "b32ec8ce-5def-4fa3-98c4-8aab350899a1",
-              "name": "body.event",
-              "value": "={{ $json.body.event }}",
-              "type": "string"
-            },
-            {
-              "id": "bfe36691-dcc7-4938-99d4-4eb05f769087",
-              "name": "message",
-              "value": "={{ $json.body.payload._data.Message.conversation }}",
-              "type": "string"
-            },
-            {
-              "id": "335eab88-854a-4e79-92f3-c51af61c0188",
-              "name": "fromMe",
-              "value": "={{ $json.body.payload.fromMe }}",
-              "type": "boolean"
-            },
-            {
-              "id": "cc01685d-5e4f-499d-a0ed-95cfea6e1a40",
               "name": "chatId",
               "value": "={{ $json.body.payload.from }}",
-              "type": "string"
+              "type": "string",
+              "id": "8e34f255-046d-4782-bd74-378c59b2073f"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.body.payload.body }}",
+              "type": "string",
+              "id": "394e8f90-0ce4-4066-8eb9-5bc6405efa3c"
+            },
+            {
+              "name": "pushName",
+              "value": "={{ $json.body.payload._data.Info.PushName }}",
+              "type": "string",
+              "id": "57fa332f-1313-405d-a2c8-3df0b7109568"
+            },
+            {
+              "name": "fromMe",
+              "value": "={{ $json.body.payload.fromMe }}",
+              "type": "boolean",
+              "id": "fc31e147-b83c-470c-89d3-d2de56845ca1"
             }
           ]
         },
@@ -70,11 +52,405 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        208,
-        0
+        -2192,
+        1280
       ],
-      "id": "46ac7e54-eb70-4032-a990-a2021f9d08eb",
-      "name": "Messag Data"
+      "id": "421f9a55-3646-40c0-bee3-bbbaf49e46b9",
+      "name": "Simplificar"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.fromMe }}"
+            }
+          ],
+          "string": [
+            {
+              "value1": "={{ $json.chatId }}",
+              "operation": "endsWith",
+              "value2": "@c.us"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2048,
+        1472
+      ],
+      "id": "746eb453-7ec0-4a1c-a01e-29a142df52fd",
+      "name": "Filtro Grupos"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst chatId = $input.item.json.chatId;\nconst message = $input.item.json.message;\nconst now = new Date().getTime();\n\nif (!staticData[chatId]) {\n  staticData[chatId] = { messages: [], lastUpdate: 0 };\n}\n\nstaticData[chatId].messages.push(message);\nstaticData[chatId].lastUpdate = now;\n\nreturn {\n  json: {\n    ...$input.item.json,\n    myTimestamp: now\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1856,
+        1280
+      ],
+      "id": "5cd3da91-e351-49ef-b3a5-ac1d425fbe5d",
+      "name": "Add Buffer"
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -1648,
+        1280
+      ],
+      "id": "05e8a207-458e-48f6-abe6-6d22642a207e",
+      "name": "Debounce",
+      "webhookId": "9a2519da-3cba-4197-8e66-29e65ce3efc6"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst chatId = $input.item.json.chatId;\nconst myTimestamp = $input.item.json.myTimestamp;\n\nif (staticData[chatId] && staticData[chatId].lastUpdate === myTimestamp) {\n  const combinedMessage = staticData[chatId].messages.join(' \\n');\n  delete staticData[chatId];\n  return { json: { ...$input.item.json, combinedMessage, shouldProcess: true } };\n}\nreturn { json: { ...$input.item.json, shouldProcess: false } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1456,
+        1280
+      ],
+      "id": "ef582c11-02d3-4e83-a8e4-2a2b8fbdfba1",
+      "name": "Process Buffer"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.shouldProcess }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1248,
+        1280
+      ],
+      "id": "b35c136d-6521-4a33-a79d-b557e90de3ba",
+      "name": "Continuar?"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Usuário ({{ $json.pushName }}): {{ $json.combinedMessage }}",
+        "options": {
+          "systemMessage": "Você é o assistente virtual da Solar System. Tire dúvidas sobre energia solar. \n\nSE O USUÁRIO QUISER UM ORÇAMENTO OU SIMULAÇÃO: Use a tool 'iniciar_orcamento' e não diga mais nada."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -256,
+        1040
+      ],
+      "id": "b7077d29-bd95-47b0-a2e6-b049e9604f0e",
+      "name": "AI Agent (Conversa)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        1232
+      ],
+      "id": "ed309214-634d-489a-80e9-4e7dd0ff85d8",
+      "name": "Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "vufQuttebhMUFCDs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Continuar?').item.json.chatId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        -144,
+        1248
+      ],
+      "id": "1f20f2a7-c6d4-46ca-8458-84ae0361b968",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "OX3Y4KKUxfjy4iX8",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.output }}",
+              "operation": "contains",
+              "value2": "START_FORM"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        64,
+        1040
+      ],
+      "id": "892d6469-f764-4ea7-b611-32ebe4c23ce6",
+      "name": "Iniciou Form?"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=state:{{ $('Continuar?').item.json.chatId }}",
+        "value": "={{ JSON.stringify({ step: 'ASK_NAME', data: {} }) }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        352,
+        880
+      ],
+      "id": "173d110a-3764-4ca5-8999-5a4891e776c6",
+      "name": "Redis: SET ASK_NAME",
+      "credentials": {
+        "redis": {
+          "id": "OX3Y4KKUxfjy4iX8",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.state.step }}",
+                    "value2": "ASK_NAME"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.state.step }}",
+                    "value2": "ASK_BILL"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "string": [
+                  {
+                    "value1": "={{ $json.state.step }}",
+                    "value2": "WAIT_CTA"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        1488
+      ],
+      "id": "27816983-3cc4-458d-89de-963653ef11a7",
+      "name": "ROTEADOR FORMULÁRIO"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=state:{{ $json.chatId }}",
+        "value": "={{ JSON.stringify({ step: 'ASK_BILL', data: { name: $json.combinedMessage } }) }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        64,
+        1392
+      ],
+      "id": "ff775fbc-2bb4-4f4b-88a8-a1e8027a3814",
+      "name": "Redis: SET ASK_BILL",
+      "credentials": {
+        "redis": {
+          "id": "OX3Y4KKUxfjy4iX8",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.item.json.combinedMessage;\nconst bill = parseFloat(text.replace(/[^0-9,.]/g, '').replace(',', '.'));\nconst data = $input.item.json.state.data;\nconst investment = (bill * 50).toFixed(2);\nconst savings = (bill * 0.95).toFixed(2);\nreturn { json: { data, bill, investment, savings } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        1568
+      ],
+      "id": "998c0a64-1485-46a1-93ef-cfc00bdc9a49",
+      "name": "Calcular Tudo"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=state:{{ $('Continuar?').item.json.chatId }}",
+        "value": "={{ JSON.stringify({ step: 'WAIT_CTA', data: { ...$json.data, bill: $json.bill, inv: $json.investment } }) }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        256,
+        1568
+      ],
+      "id": "d0c7bef7-79c9-493c-ae24-c54584d3e923",
+      "name": "Redis: SET WAIT_CTA",
+      "credentials": {
+        "redis": {
+          "id": "OX3Y4KKUxfjy4iX8",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.combinedMessage }}",
+              "operation": "contains",
+              "value2": "Sim"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        64,
+        1760
+      ],
+      "id": "e11aa6df-fc9e-4a85-bb0c-e194a4d53abb",
+      "name": "Disse Sim?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/leads",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.state.data.name }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $('Continuar?').item.json.chatId }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.combinedMessage.includes('Sim') ? 'Aguardando Contato' : 'Contato não solicitado' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        1760
+      ],
+      "id": "429e6e80-b537-441d-aa7a-fd73a3e31a0c",
+      "name": "HTTP: Enviar p/ CRM"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=state:{{ $('Continuar?').item.json.chatId }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        560,
+        1760
+      ],
+      "id": "15b3c437-c858-492d-b9cf-2b7004485596",
+      "name": "Redis: DELETE Estado",
+      "credentials": {
+        "redis": {
+          "id": "OX3Y4KKUxfjy4iX8",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=estado:{{ $json.chatId }}",
+        "options": {}
+      },
+      "id": "206ea92b-0a46-475e-a285-c36e3ad4ea71",
+      "name": "1. Ler Redis (GET)",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -992,
+        1264
+      ],
+      "credentials": {
+        "redis": {
+          "id": "OX3Y4KKUxfjy4iX8",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let estadoAtual = {};\n\n// Verifica se o Redis retornou alguma string salva\nif ($input.item.json.redis_raw_state) {\n  try {\n    // Converte a string de volta para Objeto JSON pro n8n entender\n    estadoAtual = JSON.parse($input.item.json.redis_raw_state);\n  } catch (erro) {\n    // Se der erro na leitura, zera o estado\n    estadoAtual = {};\n  }\n}\n\nreturn {\n  json: {\n    ...$input.item.json,\n    estado: estadoAtual\n  }\n};"
+      },
+      "id": "226534ff-7761-4742-a498-2b9cce7defd9",
+      "name": "2. Converter Texto para JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -816,
+        1264
+      ]
     },
     {
       "parameters": {
@@ -86,185 +462,388 @@
                   "caseSensitive": true,
                   "leftValue": "",
                   "typeValidation": "strict",
-                  "version": 3
+                  "version": 1
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.body.event }}",
-                    "rightValue": "message",
+                    "id": "3304fa2a-dad3-4702-acf2-99287aa97a0f",
+                    "leftValue": "={{ $json.estado.step }}",
+                    "rightValue": "",
                     "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "b1c93f71-f327-4c4e-a2a1-c80b569a2b7b"
+                      "type": "object",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
                   }
                 ],
                 "combinator": "and"
-              }
+              },
+              "renameOutput": true,
+              "outputKey": "Chat Livre (IA)"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "146d4a6b-8988-4b29-a9ab-06965ed8a69c",
+                    "leftValue": "={{ $json.estado.step }}",
+                    "rightValue": "ASK_BILL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Está no Formulário"
             }
           ]
         },
         "options": {}
       },
+      "id": "4243ffee-35c0-4079-bf4e-4ab35d2c147a",
+      "name": "3. Roteador de Estado",
       "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.4,
+      "typeVersion": 3,
       "position": [
-        416,
-        0
-      ],
-      "id": "0362ea00-4894-409c-a527-1602729bcba9",
-      "name": "Switch"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Esta é a mensagem do {{ $json.pushName }}: {{ $json.message }}",
-        "options": {
-          "systemMessage": "Esta é a mensagem de um usuário do nosso System. Haja como um secretário que será responsável por lidar com os clientes a partir de dados e chamadas de um portal de um sistema de CRM de Instalação de Placas Solares chamada Solar System."
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
-        704,
-        0
-      ],
-      "id": "9a95fa59-f43f-400b-8ee2-f917f196e958",
-      "name": "AI Agent"
-    },
-    {
-      "parameters": {
-        "options": {
-          "temperature": 0.4
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        592,
-        208
-      ],
-      "id": "34e35484-0efd-4af0-8da3-cb102ab226b8",
-      "name": "Google Gemini Chat Model",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "vufQuttebhMUFCDs",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "sessionIdType": "customKey",
-        "sessionKey": "={{ $json.chatId }}",
-        "sessionTTL": 3600,
-        "contextWindowLength": 10
-      },
-      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
-      "typeVersion": 1.5,
-      "position": [
-        720,
-        208
-      ],
-      "id": "430a9a00-6d46-4a5f-b5ae-1c54d5638b08",
-      "name": "Redis Chat Memory",
-      "credentials": {
-        "redis": {
-          "id": "OX3Y4KKUxfjy4iX8",
-          "name": "Redis account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "resource": "Chatting",
-        "operation": "Send Seen",
-        "session": "={{ $('Switch').item.json.session }}",
-        "chatId": "={{ $('Switch').item.json.chatId }}",
-        "messageId": "={{ $('Switch').item.json.payloadId }}",
-        "requestOptions": {}
-      },
-      "type": "n8n-nodes-waha.WAHA",
-      "typeVersion": 202411,
-      "position": [
-        1056,
-        0
-      ],
-      "id": "8765d22e-43f6-4bdd-a856-0982963758a9",
-      "name": "Send Seen",
-      "credentials": {
-        "wahaApi": {
-          "id": "9j7lU2CkkdwjGcVk",
-          "name": "WAHA account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "resource": "Chatting",
-        "operation": "Send Text",
-        "session": "={{ $('Switch').item.json.session }}",
-        "chatId": "={{ $('Switch').item.json.chatId }}",
-        "text": "={{ $('AI Agent').item.json.output }}",
-        "linkPreview": "=",
-        "requestOptions": {}
-      },
-      "type": "n8n-nodes-waha.WAHA",
-      "typeVersion": 202411,
-      "position": [
-        1264,
-        0
-      ],
-      "id": "7306bfb2-23db-4ee4-8dfe-41803382240f",
-      "name": "Send a text message",
-      "credentials": {
-        "wahaApi": {
-          "id": "9j7lU2CkkdwjGcVk",
-          "name": "WAHA account"
-        }
-      }
+        -624,
+        1264
+      ]
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Webhook (Entrada)": [
+      {
+        "json": {
+          "headers": {
+            "accept": "application/json, text/plain, */*",
+            "content-type": "application/json",
+            "user-agent": "WAHA/2026.2.1",
+            "x-webhook-request-id": "4fsuwpy7mly8o7hq",
+            "x-webhook-timestamp": "1771794455534",
+            "content-length": "14129",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "host": "host.docker.internal:5678",
+            "connection": "keep-alive"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "id": "evt_01kj3jvpzecmaj6txqyxmark24",
+            "timestamp": 1771794455534,
+            "event": "message",
+            "session": "default",
+            "metadata": {},
+            "me": {
+              "id": "5511949902159@c.us",
+              "pushName": "Ranier",
+              "lid": "165145837867137@lid",
+              "jid": "5511949902159:89@s.whatsapp.net"
+            },
+            "payload": {
+              "id": "false_120363336020038705@newsletter_3EB0F18ABCB38ACA013E2E",
+              "timestamp": 1771794453,
+              "from": "120363336020038705@newsletter",
+              "fromMe": false,
+              "source": "app",
+              "body": "BOA NOITE MEUS CLTS\n\n✅ Calça Jeans Tradicional Corte Reto\n\n🔥POR R$ 43,00 🔥\n\n🎟️ CUPOM: NAESTICA\n\n🔗 https://mercadolivre.com/sec/1xsag3h\n\n*anúncio",
+              "to": null,
+              "participant": null,
+              "hasMedia": true,
+              "media": {
+                "url": "http://localhost:3000/api/files/default/3EB0F18ABCB38ACA013E2E.jpeg",
+                "mimetype": "image/jpeg"
+              },
+              "ack": 2,
+              "location": null,
+              "vCards": null,
+              "ackName": "DEVICE",
+              "replyTo": null,
+              "_data": {
+                "Info": {
+                  "Chat": "120363336020038705@newsletter",
+                  "Sender": "120363336020038705@newsletter",
+                  "IsFromMe": false,
+                  "IsGroup": false,
+                  "AddressingMode": "",
+                  "SenderAlt": "",
+                  "RecipientAlt": "",
+                  "BroadcastListOwner": "",
+                  "BroadcastRecipients": null,
+                  "ID": "3EB0F18ABCB38ACA013E2E",
+                  "ServerID": 64979,
+                  "Type": "media",
+                  "PushName": "",
+                  "Timestamp": "2026-02-22T21:07:33Z",
+                  "Category": "",
+                  "Multicast": false,
+                  "MediaType": "image",
+                  "Edit": "",
+                  "MsgBotInfo": {
+                    "EditType": "",
+                    "EditTargetID": "",
+                    "EditSenderTimestampMS": "0001-01-01T00:00:00Z"
+                  },
+                  "MsgMetaInfo": {
+                    "TargetID": "",
+                    "TargetSender": "",
+                    "TargetChat": "",
+                    "DeprecatedLIDSession": null,
+                    "ThreadMessageID": "",
+                    "ThreadMessageSenderJID": ""
+                  },
+                  "VerifiedName": null,
+                  "DeviceSentMeta": null
+                },
+                "Message": {
+                  "imageMessage": {
+                    "mimetype": "image/jpeg",
+                    "caption": "BOA NOITE MEUS CLTS\n\n✅ Calça Jeans Tradicional Corte Reto\n\n🔥POR R$ 43,00 🔥\n\n🎟️ CUPOM: NAESTICA\n\n🔗 https://mercadolivre.com/sec/1xsag3h\n\n*anúncio",
+                    "fileSHA256": "VHJHCUgCf6Fp3gEtm5od8lNuqwN9qls7wFgU058h1J4=",
+                    "fileLength": 101380,
+                    "height": 1192,
+                    "width": 928,
+                    "directPath": "/m1/v/t24/An9Vz8ftAweQfyRpwjNmTfMKGIdwo8w_KPP-jkXCgnFtOj-bnh-SwYaxqmAd1bj6NmUvWcfidDyWyNcALOn6GLPB4uhYrp4wUWWX1R0chwgF0fUaSX6yh-vpqqiSwpmLQA?ccb=10-5&oh=01_Q5Aa3wEsp-Dfsbr1oaZapLdZtuPnoJpyma1sKd4kkDAdTAnYgQ&oe=69C2EC01&_nc_sid=5e03e0",
+                    "JPEGThumbnail": "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",
+                    "contextInfo": {
+                      "forwardingScore": 1,
+                      "isForwarded": true,
+                      "forwardedNewsletterMessageInfo": {
+                        "newsletterJID": "120363423050934386@newsletter",
+                        "serverMessageID": 2029,
+                        "newsletterName": "Roupas em Promo l Ofertas, Achadinhos, Descontos & Cupons"
+                      }
+                    },
+                    "viewOnce": false,
+                    "thumbnailDirectPath": "/m1/v/t24/An_TWyUP4Y1v4-YjhroZRY4e1ZAVVyvlJrGVZD0PEVvFfLQBhn0scwf_sJCjer1uhfe6Z9vVR8e-paiCX222ik_dQk-yUuE2AZSIPnd1KLzMqKN046lxDPXNuYQUUN6pX7-BQxF54fnOCbaFrM16n5Er3g?ccb=10-5&oh=01_Q5Aa3wEdV_iecZflQhLg9ajdkIrjz1rsPrW-HgawKNjAaKPZIg&oe=69C2EB42&_nc_sid=5e03e0",
+                    "thumbnailSHA256": "yHw3xFwOF9L6hmMT9Z2hzmTJJA3+WdF3UQ86/4a3lM0="
+                  },
+                  "messageContextInfo": {
+                    "messageSecret": "W9ao/oBSQ9r3kEs8tSZbz+n0wlsJ2W4k4gMgxrT9PVk="
+                  }
+                },
+                "IsEphemeral": false,
+                "IsViewOnce": false,
+                "IsViewOnceV2": false,
+                "IsViewOnceV2Extension": false,
+                "IsDocumentWithCaption": false,
+                "IsLottieSticker": false,
+                "IsBotInvoke": false,
+                "IsEdit": false,
+                "SourceWebMsg": null,
+                "UnavailableRequestID": "",
+                "RetryCount": 0,
+                "NewsletterMeta": null,
+                "RawMessage": {
+                  "imageMessage": {
+                    "mimetype": "image/jpeg",
+                    "caption": "BOA NOITE MEUS CLTS\n\n✅ Calça Jeans Tradicional Corte Reto\n\n🔥POR R$ 43,00 🔥\n\n🎟️ CUPOM: NAESTICA\n\n🔗 https://mercadolivre.com/sec/1xsag3h\n\n*anúncio",
+                    "fileSHA256": "VHJHCUgCf6Fp3gEtm5od8lNuqwN9qls7wFgU058h1J4=",
+                    "fileLength": 101380,
+                    "height": 1192,
+                    "width": 928,
+                    "directPath": "/m1/v/t24/An9Vz8ftAweQfyRpwjNmTfMKGIdwo8w_KPP-jkXCgnFtOj-bnh-SwYaxqmAd1bj6NmUvWcfidDyWyNcALOn6GLPB4uhYrp4wUWWX1R0chwgF0fUaSX6yh-vpqqiSwpmLQA?ccb=10-5&oh=01_Q5Aa3wEsp-Dfsbr1oaZapLdZtuPnoJpyma1sKd4kkDAdTAnYgQ&oe=69C2EC01&_nc_sid=5e03e0",
+                    "JPEGThumbnail": "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",
+                    "contextInfo": {
+                      "forwardingScore": 1,
+                      "isForwarded": true,
+                      "forwardedNewsletterMessageInfo": {
+                        "newsletterJID": "120363423050934386@newsletter",
+                        "serverMessageID": 2029,
+                        "newsletterName": "Roupas em Promo l Ofertas, Achadinhos, Descontos & Cupons"
+                      }
+                    },
+                    "viewOnce": false,
+                    "thumbnailDirectPath": "/m1/v/t24/An_TWyUP4Y1v4-YjhroZRY4e1ZAVVyvlJrGVZD0PEVvFfLQBhn0scwf_sJCjer1uhfe6Z9vVR8e-paiCX222ik_dQk-yUuE2AZSIPnd1KLzMqKN046lxDPXNuYQUUN6pX7-BQxF54fnOCbaFrM16n5Er3g?ccb=10-5&oh=01_Q5Aa3wEdV_iecZflQhLg9ajdkIrjz1rsPrW-HgawKNjAaKPZIg&oe=69C2EB42&_nc_sid=5e03e0",
+                    "thumbnailSHA256": "yHw3xFwOF9L6hmMT9Z2hzmTJJA3+WdF3UQ86/4a3lM0="
+                  },
+                  "messageContextInfo": {
+                    "messageSecret": "W9ao/oBSQ9r3kEs8tSZbz+n0wlsJ2W4k4gMgxrT9PVk="
+                  }
+                },
+                "Status": 3
+              }
+            },
+            "environment": {
+              "version": "2026.2.1",
+              "engine": "GOWS",
+              "tier": "CORE",
+              "browser": null,
+              "platform": "linux/x64",
+              "worker": {
+                "id": null
+              }
+            }
+          },
+          "webhookUrl": "http://host.docker.internal:5678/webhook-test/webhook",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Simplificar": [
+      {
+        "json": {
+          "chatId": "120363336020038705@newsletter",
+          "message": "BOA NOITE MEUS CLTS\n\n✅ Calça Jeans Tradicional Corte Reto\n\n🔥POR R$ 43,00 🔥\n\n🎟️ CUPOM: NAESTICA\n\n🔗 https://mercadolivre.com/sec/1xsag3h\n\n*anúncio",
+          "pushName": "",
+          "fromMe": false
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Add Buffer": [
+      {
+        "json": {
+          "chatId": "120363336020038705@newsletter",
+          "message": "BOA NOITE MEUS CLTS\n\n✅ Calça Jeans Tradicional Corte Reto\n\n🔥POR R$ 43,00 🔥\n\n🎟️ CUPOM: NAESTICA\n\n🔗 https://mercadolivre.com/sec/1xsag3h\n\n*anúncio",
+          "pushName": "",
+          "fromMe": false,
+          "myTimestamp": 1771794573881
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Debounce": [
+      {
+        "json": {
+          "chatId": "120363336020038705@newsletter",
+          "message": "BOA NOITE MEUS CLTS\n\n✅ Calça Jeans Tradicional Corte Reto\n\n🔥POR R$ 43,00 🔥\n\n🎟️ CUPOM: NAESTICA\n\n🔗 https://mercadolivre.com/sec/1xsag3h\n\n*anúncio",
+          "pushName": "",
+          "fromMe": false,
+          "myTimestamp": 1771794573881
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Process Buffer": [
+      {
+        "json": {
+          "chatId": "120363336020038705@newsletter",
+          "message": "BOA NOITE MEUS CLTS\n\n✅ Calça Jeans Tradicional Corte Reto\n\n🔥POR R$ 43,00 🔥\n\n🎟️ CUPOM: NAESTICA\n\n🔗 https://mercadolivre.com/sec/1xsag3h\n\n*anúncio",
+          "pushName": "",
+          "fromMe": false,
+          "myTimestamp": 1771794573881,
+          "shouldProcess": true
+        }
+      }
+    ],
+    "1. Ler Redis (GET)": [
+      {
+        "json": {
+          "propertyName": null
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "2. Converter Texto para JSON": [
+      {
+        "json": {
+          "propertyName": null,
+          "estado": {}
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
   "connections": {
-    "Webhook": {
+    "Webhook (Entrada)": {
       "main": [
         [
           {
-            "node": "Messag Data",
+            "node": "Simplificar",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Messag Data": {
+    "Simplificar": {
       "main": [
         [
           {
-            "node": "Switch",
+            "node": "Add Buffer",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Switch": {
+    "Filtro Grupos": {
+      "main": [
+        []
+      ]
+    },
+    "Add Buffer": {
       "main": [
         [
           {
-            "node": "AI Agent",
+            "node": "Debounce",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Google Gemini Chat Model": {
+    "Debounce": {
+      "main": [
+        [
+          {
+            "node": "Process Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Buffer": {
+      "main": [
+        [
+          {
+            "node": "Continuar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continuar?": {
+      "main": [
+        [
+          {
+            "node": "1. Ler Redis (GET)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini": {
       "ai_languageModel": [
         [
           {
-            "node": "AI Agent",
+            "node": "AI Agent (Conversa)",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -275,29 +854,134 @@
       "ai_memory": [
         [
           {
-            "node": "AI Agent",
+            "node": "AI Agent (Conversa)",
             "type": "ai_memory",
             "index": 0
           }
         ]
       ]
     },
-    "AI Agent": {
+    "AI Agent (Conversa)": {
       "main": [
         [
           {
-            "node": "Send Seen",
+            "node": "Iniciou Form?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send Seen": {
+    "Iniciou Form?": {
       "main": [
         [
           {
-            "node": "Send a text message",
+            "node": "Redis: SET ASK_NAME",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROTEADOR FORMULÁRIO": {
+      "main": [
+        [
+          {
+            "node": "Redis: SET ASK_BILL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Calcular Tudo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Disse Sim?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Tudo": {
+      "main": [
+        [
+          {
+            "node": "Redis: SET WAIT_CTA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disse Sim?": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Enviar p/ CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP: Enviar p/ CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Enviar p/ CRM": {
+      "main": [
+        [
+          {
+            "node": "Redis: DELETE Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Ler Redis (GET)": {
+      "main": [
+        [
+          {
+            "node": "2. Converter Texto para JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Converter Texto para JSON": {
+      "main": [
+        [
+          {
+            "node": "3. Roteador de Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Roteador de Estado": {
+      "main": [
+        [
+          {
+            "node": "AI Agent (Conversa)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ROTEADOR FORMULÁRIO",
             "type": "main",
             "index": 0
           }
@@ -311,7 +995,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "bbb93cf1-4421-4abd-b9b4-4362fb69a99d",
+  "versionId": "ab435d4d-6b13-469d-be96-5884900735ab",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8dff8567851423d901f4cfa7014716a8f7c8748a55996052d32d2e3302e91d38"
