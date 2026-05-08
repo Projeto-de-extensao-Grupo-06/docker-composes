@@ -1,83 +1,56 @@
 # Infraestrutura de Backend
 
-Este diretório contém a infraestrutura essencial para os serviços de processamento de regras de negócios da aplicação. Após a pulverização dos composes, a arquitetura distingue operações através de instâncias distintas: monolítica e microserviços.
+Este diretório contém a infraestrutura essencial para os serviços de processamento de regras de negócios da aplicação Solarway. A arquitetura é dividida em **Monolito** (Core) e **Microserviços** (Tarefas especializadas).
 
-## Estrutura Atual
+## 🏗️ Estrutura
 
-- **`monolith/`**: Centraliza o core backend em Spring Boot. O manifesto contido sob esta pasta puxa a versão compilada via imagem e estabelece o elo dele com portas, redes e variáveis sensíveis.
-- **`microservice/`**: Configurações adicionais de serviços específicos (ex: `schedule-notification`), podendo ser acompanhados de seus próprios datastores (como MySQL para agendamentos).
-
----
-
-## Como Fazer Build / Atualizar Imagens (GitHub Packages)
-
-As imagens deste serviço são hospedadas no **GitHub Container Registry (GHCR)**.
-
-1. **Autenticação**:
-   Antes de qualquer operação, realize o login no registro da organização:
-   ```bash
-   echo $GITHUB_ACCESS_TOKEN | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin
-   ```
-
-2. **Build e Tag**:
-   Acesse o repositório de código fonte do backend e execute:
-   ```bash
-   docker build -t ghcr.io/projeto-de-extensao-grupo-06/springboot-web-backend:latest .
-   ```
-
-3. **Push**:
-   ```bash
-   docker push ghcr.io/projeto-de-extensao-grupo-06/springboot-web-backend:latest
-   ```
-
-*(Nota: no caso de microserviços que declarem a propriedade `build: .` em seu manifesto interno, o próprio sub-diretório de infra já agirá como construtor caso os artefatos de build sejam dispostos).*
+- **`monolith/`**: API principal em Spring Boot. Gerencia o banco de dados principal, cache e integração com S3.
+- **`microservice/`**: Serviços desacoplados. Atualmente hospeda o `schedule-notification` para agendamento de mensagens.
 
 ---
 
-## Variáveis de Ambiente
+## 📡 Conexões e Endpoints
 
-> Todas as variáveis abaixo devem estar no `.env` na raiz do repositório de infra. Consulte o [VARIABLES_REFERENCE.md](../../docs/VARIABLES_REFERENCE.md) para detalhes completos.
+### Produção (AWS)
+Em produção, os backends rodam em subnets privadas. O acesso externo é feito via Nginx Proxy.
 
-### Monolito (`monolith/docker-compose.yml`)
+| Serviço | Endpoint Interno | Endpoint Público (via Proxy) |
+|---------|------------------|------------------------------|
+| **Monolito** | `http://<IP_PRIVADO>:8000` | `http://<IP_PRODUTO>/api` |
+| **Microserviço** | `http://<IP_PRIVADO>:8082` | `http://<IP_PRODUTO>/schedule` |
 
-| Variável | Obrig. | Descrição |
-|----------|:------:|-----------|
-| `DB_USERNAME` | 🔴 | Usuário do MySQL |
-| `DB_PASSWORD` | 🔴 | Senha do MySQL |
-| `EMAIL` | 🔴 | E-mail remetente de notificações |
-| `EMAIL_PASSWORD` | 🔴 | Senha/App Password do e-mail (Gmail) |
-| `BOT_SECRET` | 🔴 | Chave simétrica para autenticar o bot |
-| `BUCKET_NAME` | 🔴 | Nome do bucket S3 do Data Lake |
-| `AWS_ACCESS_KEY_ID` | 🔴 | Credencial de sessão AWS |
-| `AWS_SECRET_ACCESS_KEY` | 🔴 | Credencial de sessão AWS |
-| `AWS_SESSION_TOKEN` | 🟡 | Token de sessão AWS (Academy) |
-| `PORT_BACKEND_MONOLITH` | 🟢 | Porta externa (padrão: `8000`) |
-
-### Microserviço (`microservice/docker-compose.yml`)
-
-| Variável | Obrig. | Descrição |
-|----------|:------:|-----------|
-| `DB_PASSWORD` | 🔴 | Senha do MySQL isolado do microserviço |
-| `PORT_BACKEND_MICROSERVICE` | 🟢 | Porta externa (padrão: `8082`) |
-| `PORT_MICROSERVICE_DB` | 🟢 | Porta do MySQL do microserviço (padrão: `3306`) |
+### Conectividade Interna
+- **Banco de Dados**: Conecta-se ao `mysql-db:3306` via rede `solarway_network`.
+- **Cache**: Conecta-se ao `redis-multidb:6379`.
+- **Data Lake**: Utiliza **VPC Endpoints** para se comunicar com o S3 sem sair da rede da AWS, garantindo performance e segurança.
 
 ---
 
-## Iniciando
+## 🛠️ Variáveis de Ambiente (Configurações)
 
-Uma vez que as imagens estão dispostas remota ou localmente, basta adentrar ao respectivo diretório do sub-módulo que se deseja iniciar e executar:
+As variáveis abaixo devem ser configuradas no arquivo `.env` na raiz da infraestrutura.
 
-### Iniciando o Monolito
-```bash
-cd monolith
-docker compose up -d
+| Variável | Descrição | Exemplo |
+|----------|-----------|---------|
+| `DB_HOST` | Host do banco de dados | `mysql-db` (Docker) ou IP Privado (AWS) |
+| `SPRING_DATASOURCE_URL` | URL JDBC completa | `jdbc:mysql://db-host:3306/solarway` |
+| `BUCKET_NAME` | Camada do Data Lake | `solarway-datalake-trusted` |
+| `SPRING_PROFILES_ACTIVE`| Perfil do Spring | `prod` ou `dev` |
+| `BOT_SECRET` | Token de validação Bot | `chave-secreta-compartilhada` |
+
+---
+
+## 🚀 Estratégia de Deployment
+
+O deploy do backend em produção é realizado de forma isolada para garantir que atualizações na lógica de negócio não afetem a disponibilidade do banco de dados ou do frontend.
+
+**Comando de Deploy (Produção):**
+```powershell
+.\terraform\environments\prod\scripts\deploy-backend.ps1
 ```
 
-### Iniciando Microserviços (Ex: schedule-notification)
-```bash
-cd microservice
-docker compose up -d --build
-```
-> **Nota de Build**: O manifesto apontará o contexto de compilação relativo (`build: ../../../../schedule-notification`) localizando o repositório-irmão do código fonte fora deste repositório de infra. Para que a compilação local da imagem do microserviço funcione, ele precisa encontrar e ler um `.env` existente nesse repositório fonte.
-
-Em ambos cenários o app tenta participar de instâncias como `storage_network` ou `solarway_network`. Repare que o `monolith` constrói a bridge de comunicação primária *solarway_network*. (Se obtiver erro por pontes externas remanescentes, exija a criação delas previamente no host `docker network create [nome]`).
+Este script:
+1. Provisiona/Atualiza as instâncias EC2 do Monolito e Microserviço.
+2. Injeta as variáveis de ambiente via AWS SSM.
+3. Realiza o `docker compose pull` para baixar as versões mais recentes do GHCR.
+4. Reinicia os containers com o novo código.
