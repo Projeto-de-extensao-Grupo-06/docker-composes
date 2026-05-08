@@ -96,3 +96,15 @@ variable "rabbitmq_default_pass" {
   type        = string
   default     = "0624"
 }
+
+variable "grafana_user" {
+  description = "Usuário do Grafana"
+  type        = string
+  default     = "admin"
+}
+
+variable "grafana_password" {
+  description = "Senha do Grafana"
+  type        = string
+  default     = "admin"
+}

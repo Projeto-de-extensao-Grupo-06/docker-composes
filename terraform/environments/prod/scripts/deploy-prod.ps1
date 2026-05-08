@@ -36,6 +36,8 @@ $TF_VARS = @{
     "aws_access_key" = $envVars["AWS_ACCESS_KEY_ID"]
     "aws_secret_key" = $envVars["AWS_SECRET_ACCESS_KEY"]
     "aws_session_token" = $envVars["AWS_SESSION_TOKEN"]
+    "grafana_user"   = if ($envVars.ContainsKey("GRAFANA_USER")) { $envVars["GRAFANA_USER"] } else { "admin" }
+    "grafana_password" = if ($envVars.ContainsKey("GRAFANA_PASSWORD")) { $envVars["GRAFANA_PASSWORD"] } else { "admin" }
 }
 
 
@@ -123,6 +125,8 @@ $WS_IP     = Get-TFOutput "webscraping_private_ip"
 $WS_SSM    = Get-TFOutput "webscraping_ssm_connect"
 $DB_IP     = Get-TFOutput "db_private_ip"
 $DB_SSM    = Get-TFOutput "db_ssm_connect"
+$GRAF_IP   = Get-TFOutput "grafana_private_ip"
+$GRAF_SSM  = Get-TFOutput "grafana_ssm_connect"
 
 Set-Location $OriginalPath
 
@@ -142,6 +146,8 @@ Write-Host "  API Backend:       http://$($NGINX_IP)/api/"
 Write-Host "  Website Instit.:   http://$($NGINX_IP)/institucional/"
 Write-Host "  n8n Editor:        http://$($NGINX_IP):5678/"
 Write-Host "  WAHA Dashboard:    http://$($NGINX_IP):3000/"
+Write-Host "  RabbitMQ Panel:    http://$($NGINX_IP):15672/"
+Write-Host "  Grafana Access:    http://$($NGINX_IP):3001/"
 Write-Host "  Healthcheck:       http://$($NGINX_IP)/health"
 Write-Host "  --------------------------------------------------------------------"
 
@@ -187,6 +193,11 @@ Write-Host ""
 
 Write-Host "  [database / MySQL + Redis] IP: $DB_IP" -ForegroundColor Yellow
 Write-Host "  Conectar:  $DB_SSM"
+Write-Host "  Ver Log:   $log_cmd"
+Write-Host ""
+
+Write-Host "  [grafana / observabilidade] IP: $GRAF_IP (privado)" -ForegroundColor Yellow
+Write-Host "  Conectar:  $GRAF_SSM"
 Write-Host "  Ver Log:   $log_cmd"
 Write-Host ""
 

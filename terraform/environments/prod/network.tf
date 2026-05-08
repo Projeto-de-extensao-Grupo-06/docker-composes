@@ -43,7 +43,7 @@ module "ec2_nginx" {
   instance_type        = "t3.small"
   vpc_id               = module.vpc_prod.vpc_id
   subnet_id            = module.vpc_prod.public_subnet_ids[0]
-  frontend_ports       = [80, 443, 3000, 5678, 8081, 15672]
+  frontend_ports       = [80, 443, 3000, 3001, 5678, 8081, 15672]
   iam_instance_profile = "LabInstanceProfile"
   source_dest_check    = false
 
@@ -70,6 +70,8 @@ module "ec2_nginx" {
     INSTITUCIONAL_PRIVATE_IP=${module.ec2_frontend_1.private_ip}
     N8N_PRIVATE_IP=${module.ec2_chatbot.private_ip}
     WAHA_PRIVATE_IP=${module.ec2_chatbot.private_ip}
+    MICROSERVICE_PRIVATE_IP=${module.ec2_backend_2.private_ip}
+    GRAFANA_PRIVATE_IP=${module.ec2_grafana.private_ip}
     DOMAIN=${var.domain}
     EMAIL=${var.email}
     GITHUB_USERNAME=${var.github_username}
@@ -128,6 +130,7 @@ resource "aws_ssm_association" "env_proxy" {
       "N8N_PRIVATE_IP=${module.ec2_chatbot.private_ip}",
       "WAHA_PRIVATE_IP=${module.ec2_chatbot.private_ip}",
       "MICROSERVICE_PRIVATE_IP=${module.ec2_backend_2.private_ip}",
+      "GRAFANA_PRIVATE_IP=${module.ec2_grafana.private_ip}",
       "DOMAIN=${var.domain}",
       "EMAIL=${var.email}",
       "GITHUB_USERNAME=${var.github_username}",

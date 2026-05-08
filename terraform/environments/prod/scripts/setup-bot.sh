@@ -81,7 +81,22 @@ if [[ "$BOT_TYPE" == "webscraping" ]]; then
         cd ../..
         echo "[PROD-BOT] Web Scrapping Job iniciado!"
     else
-        echo "Erro: services/web-scrapping nÃ£o encontrado!"
+        echo "Erro: services/web-scrapping não encontrado!"
+        exit 1
+    fi
+fi
+
+# Grafana (Observability)
+if [[ "$BOT_TYPE" == "grafana" ]]; then
+    echo "[PROD-BOT] Iniciando Grafana Stack..."
+    if [ -d "services/grafana" ]; then
+        cd services/grafana
+        sudo docker compose pull
+        sudo docker compose --env-file ../../.env up -d
+        cd ../..
+        echo "[PROD-BOT] Grafana Stack iniciada!"
+    else
+        echo "Erro: services/grafana não encontrado!"
         exit 1
     fi
 fi

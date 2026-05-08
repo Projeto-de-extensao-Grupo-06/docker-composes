@@ -119,3 +119,18 @@ output "db_logs" {
   description = "Logs — Banco de Dados"
   value       = "aws ssm start-session --target ${module.ec2_db.instance_id} --document-name AWS-StartInteractiveCommand --parameters command='tail -f /var/log/solarway-setup.log'"
 }
+
+output "grafana_private_ip" {
+  description = "IP Privado — Grafana"
+  value       = module.ec2_grafana.private_ip
+}
+
+output "grafana_ssm_connect" {
+  description = "SSM — Grafana"
+  value       = "aws ssm start-session --target ${module.ec2_grafana.instance_id}"
+}
+
+output "grafana_logs" {
+  description = "Logs — Grafana"
+  value       = "aws ssm start-session --target ${module.ec2_grafana.instance_id} --document-name AWS-StartInteractiveCommand --parameters command='tail -f /var/log/solarway-setup.log'"
+}

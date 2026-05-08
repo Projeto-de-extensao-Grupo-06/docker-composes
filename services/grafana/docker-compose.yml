@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-observability
+    platform: linux/amd64
+    ports:
+      - "${PORT_GRAFANA:-3001}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    networks:
+      - solarway_network
+
+volumes:
+  grafana_data:
+
+networks:
+  solarway_network:
+    external: true
+    name: solarway_network
