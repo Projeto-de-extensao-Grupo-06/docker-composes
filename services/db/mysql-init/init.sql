@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS permission_group (
     access_client INT,
     access_project INT,
     access_budget INT,
-    access_schedule INT
+    access_schedule INT,
+    access_material INT,
+    access_configuration INT
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS address (
@@ -168,10 +170,18 @@ CREATE TABLE IF NOT EXISTS budget_material (
 -- 3. Carga de Dados (Inserts)
 -- Usamos INSERT IGNORE para evitar erros se rodar mais de uma vez.
 
-INSERT IGNORE INTO permission_group (id_permission_group, role, main_module, access_client, access_project, access_budget, access_schedule) VALUES
-(1, 'ADMIN', 'PROJECT_LIST', 15, 15, 15, 15),
-(2, 'TÉCNICO', 'SCHEDULE', 1, 7, 1, 15),
-(3, 'SECRETÁRIA', 'CLIENT_LIST', 15, 3, 15, 1);
+INSERT IGNORE INTO permission_group
+(id_permission_group, role, main_module,
+ access_client,
+ access_project,
+ access_budget,
+ access_schedule,
+ access_material,
+ access_configuration)
+VALUES
+(1, 'ADMIN', 'PROJECT',   15, 15, 15, 15, 15, 15),
+(2, 'TÉCNICO', 'SCHEDULE', 1,  7,  1, 15,  1,  1),
+(3, 'SECRETÁRIA', 'CLIENT',15,  3, 15,  1,  1,  1);
 
 INSERT IGNORE INTO coworker (id_coworker, first_name, last_name, email, phone, password, is_active, fk_permission_group) VALUES
 (1, 'Sálvio', 'Nobrega', 'salvio.admin@solarway.com.br', '11987654321', '$2a$12$dUlemf8rtZhoMu/nH.5XtOmerR.uxfLp5vmVbYVrzduguD.d/jhWG', TRUE, 1),
