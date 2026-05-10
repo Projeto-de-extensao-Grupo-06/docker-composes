@@ -278,21 +278,49 @@ INSERT IGNORE INTO coworker_project (fk_coworker, fk_project, is_responsible) VA
 
 INSERT IGNORE INTO schedule (id_schedule, title, description, start_date, end_date, type, status, is_active, fk_project, fk_coworker) VALUES
 (1, 'Visita Técnica João', 'Medição de telhado', DATE_ADD(NOW(), INTERVAL 24 HOUR), DATE_ADD(NOW(), INTERVAL 26 HOUR), 'TECHNICAL_VISIT', 'MARKED', TRUE, 1, 2),
-(2, 'Instalação Maria', 'Instalação Off-grid', DATE_ADD(NOW(), INTERVAL -10 DAY), DATE_ADD(NOW(), INTERVAL -7 DAY), 'INSTALL_VISIT', 'FINISHED', TRUE, 1, 3);
+(2, 'Visita Técnica Maria', 'Análise de local', DATE_ADD(NOW(), INTERVAL -20 DAY), DATE_ADD(NOW(), INTERVAL -20 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 2, 3),
+(3, 'Instalação Maria', 'Instalação Off-grid', DATE_ADD(NOW(), INTERVAL -10 DAY), DATE_ADD(NOW(), INTERVAL -7 DAY), 'INSTALL_VISIT', 'FINISHED', TRUE, 2, 3),
+(4, 'Visita Técnica Pedro', 'Medição para sistema comercial', DATE_ADD(NOW(), INTERVAL -30 DAY), DATE_ADD(NOW(), INTERVAL -30 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 3, 1),
+(5, 'Instalação Pedro', 'Instalação On-grid', DATE_ADD(NOW(), INTERVAL -15 DAY), DATE_ADD(NOW(), INTERVAL -10 DAY), 'INSTALL_VISIT', 'FINISHED', TRUE, 3, 1),
+(6, 'Visita Técnica Lucia', 'Análise Off-grid', DATE_ADD(NOW(), INTERVAL -5 DAY), DATE_ADD(NOW(), INTERVAL -5 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 4, 4),
+(7, 'Visita Técnica Shopping', 'Avaliação de estrutura Carport', DATE_ADD(NOW(), INTERVAL -5 DAY), DATE_ADD(NOW(), INTERVAL -5 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 7, 3),
+(8, 'Instalação Shopping', 'Instalação Carport', DATE_ADD(NOW(), INTERVAL 5 DAY), DATE_ADD(NOW(), INTERVAL 15 DAY), 'INSTALL_VISIT', 'MARKED', TRUE, 7, 3),
+(9, 'Visita Técnica Sítio', 'Medição de bombeamento', DATE_ADD(NOW(), INTERVAL -12 DAY), DATE_ADD(NOW(), INTERVAL -12 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 8, 4);
 
 INSERT IGNORE INTO portfolio (id_portfolio, title, description, image_path, fk_project) VALUES
 (1, 'Residência Sustentável', 'Sistema 5kWp em telhado cerâmico', '/images/portfolio/joao_v1.jpg', 1),
 (2, 'Backup Hospitalar', 'Sistema de segurança energética', '/images/portfolio/maria_clinic.jpg', 2);
 
 INSERT IGNORE INTO budget (id_budget, subtotal, total_cost, discount, material_cost, service_cost, created_at, discount_type, final_budget, fk_project) VALUES
-(1, 15000.00, 10000.00, 50.00, 8000.00, 2000.00, NOW(), 'PERCENT', TRUE, 1),
-(2, 35000.00, 25000.00, 250.00, 20000.00, 5000.00, NOW(), 'AMOUNT', TRUE, 2);
+(2, 24535.10, 24000.00, 535.10, 19535.10, 5000.00, DATE_ADD(NOW(), INTERVAL -15 DAY), 'AMOUNT', TRUE, 2),
+(3, 44387.30, 43000.00, 1387.30, 36387.30, 8000.00, DATE_ADD(NOW(), INTERVAL -25 DAY), 'AMOUNT', TRUE, 3),
+(4, 18292.55, 18000.00, 292.55, 15292.55, 3000.00, DATE_ADD(NOW(), INTERVAL -2 DAY), 'AMOUNT', TRUE, 4),
+(6, 10000.00, 9500.00, 5.00, 8000.00, 2000.00, DATE_ADD(NOW(), INTERVAL -1 DAY), 'PERCENT', FALSE, 6),
+(7, 76025.50, 75000.00, 1025.50, 61025.50, 15000.00, DATE_ADD(NOW(), INTERVAL -3 DAY), 'AMOUNT', TRUE, 7),
+(8, 38270.20, 38270.20, 0.00, 32270.20, 6000.00, DATE_ADD(NOW(), INTERVAL -8 DAY), 'AMOUNT', TRUE, 8);
 
 INSERT IGNORE INTO budget_material (fk_budget, fk_material_url, quantity, price) VALUES
-(1, 1, 10, 900.00),
-(1, 4, 100, 12.00),
+(2, 1, 10, 900.00),
 (2, 2, 1, 3500.00),
-(2, 3, 2, 2800.00);
+(2, 3, 2, 2800.00),
+(2, 4, 50, 12.00),
+(2, 9, 2, 417.55),
+(3, 5, 30, 820.00),
+(3, 6, 3, 2999.00),
+(3, 7, 1, 285.00),
+(3, 9, 6, 417.55),
+(4, 1, 6, 900.00),
+(4, 2, 1, 3500.00),
+(4, 8, 1, 5975.00),
+(4, 9, 1, 417.55),
+(7, 5, 50, 820.00),
+(7, 6, 5, 2999.00),
+(7, 7, 3, 285.00),
+(7, 9, 10, 417.55),
+(8, 1, 20, 900.00),
+(8, 2, 2, 3500.00),
+(8, 3, 2, 2800.00),
+(8, 9, 4, 417.55);
 
 INSERT IGNORE INTO budget_parameter (name, description, metric, is_pre_budget, fixed_value, active, created_at) VALUES
 ('Tipo de Telhado', 'Define o material do telhado da instalação', 'un', TRUE, 0.00, TRUE, CURRENT_TIMESTAMP),

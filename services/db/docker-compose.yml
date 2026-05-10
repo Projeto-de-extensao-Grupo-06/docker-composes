@@ -11,9 +11,9 @@ services:
     networks:
       - storage_network
 
-  mysql:
+  db-oltp:
     image: mysql:8.0
-    container_name: mysql-db
+    container_name: mysql-db-oltp
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password --log-bin-trust-function-creators=1
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-${DB_PASSWORD}}
@@ -21,9 +21,26 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${PORT_MYSQL:-3306}:3306" # Exposta na porta padrao 3306
+      - "${PORT_MYSQL_OLTP:-3306}:3306" # Exposta na porta padrao 3306
     volumes:
-      - ./mysql-init:/docker-entrypoint-initdb.d # Scripts de inicialização
+      - ./init-oltp:/docker-entrypoint-initdb.d # Scripts de inicialização OLTP
+    restart: unless-stopped
+    networks:
+      - storage_network
+
+  db-olap:
+    image: mysql:8.0
+    container_name: mysql-db-olap
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password --log-bin-trust-function-creators=1
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-${DB_PASSWORD}}
+      MYSQL_DATABASE: solarway
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${PORT_MYSQL_OLAP:-3308}:3308"
+    volumes:
+      - ./init-olap:/docker-entrypoint-initdb.d # Scripts de inicialização OLAP
     restart: unless-stopped
     networks:
       - storage_network
