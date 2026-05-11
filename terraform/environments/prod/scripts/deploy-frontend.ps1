@@ -26,11 +26,18 @@ Write-Host "[DEPLOY - FRONTEND] Iniciando deploy do Frontend..." -ForegroundColo
 Set-Location (Join-Path $PSScriptRoot "..")
 
 terraform init -reconfigure
-terraform apply -auto-approve @varArgs `
-    -target=module.ec2_frontend_1 `
-    -target=module.ec2_frontend_2 `
-    -target=aws_ssm_association.env_frontend_1 `
-    -target=aws_ssm_association.env_frontend_2
+if ($LASTEXITCODE -ne 0) { Set-Location $OriginalPath; throw "Erro no terraform init." }
+
+$targets = @(
+    "module.ec2_frontend_1",
+    "module.ec2_frontend_2",
+    "aws_ssm_association.env_frontend_1",
+    "aws_ssm_association.env_frontend_2"
+) | ForEach-Object { "-target=$_" }
+
+terraform apply -auto-approve @varArgs @targets
+
+if ($LASTEXITCODE -ne 0) { Set-Location $OriginalPath; throw "Erro no terraform apply." }
 
 Set-Location $OriginalPath
 Write-Host "[DEPLOY - FRONTEND] Concluído!" -ForegroundColor Green

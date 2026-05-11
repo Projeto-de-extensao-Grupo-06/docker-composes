@@ -30,7 +30,16 @@ Write-Host "[DEPLOY - DB] Iniciando deploy do Banco de Dados..." -ForegroundColo
 Set-Location (Join-Path $PSScriptRoot "..")
 
 terraform init -reconfigure
-terraform apply -auto-approve @varArgs -target=module.ec2_db -target=aws_ssm_association.env_db
+if ($LASTEXITCODE -ne 0) { Set-Location $OriginalPath; throw "Erro no terraform init." }
+
+$targets = @(
+    "module.ec2_db",
+    "aws_ssm_association.env_db"
+) | ForEach-Object { "-target=$_" }
+
+terraform apply -auto-approve @varArgs @targets
+
+if ($LASTEXITCODE -ne 0) { Set-Location $OriginalPath; throw "Erro no terraform apply." }
 
 Set-Location $OriginalPath
 Write-Host "[DEPLOY - DB] Concluído!" -ForegroundColor Green

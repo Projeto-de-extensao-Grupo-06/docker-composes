@@ -31,11 +31,18 @@ Write-Host "[DEPLOY - BACKEND] Iniciando deploy do Backend..." -ForegroundColor 
 Set-Location (Join-Path $PSScriptRoot "..")
 
 terraform init -reconfigure
-terraform apply -auto-approve @varArgs `
-    -target=module.ec2_backend_1 `
-    -target=module.ec2_backend_2 `
-    -target=aws_ssm_association.env_backend_1 `
-    -target=aws_ssm_association.env_backend_2
+if ($LASTEXITCODE -ne 0) { Set-Location $OriginalPath; throw "Erro no terraform init." }
+
+$targets = @(
+    "module.ec2_backend_1",
+    "module.ec2_backend_2",
+    "aws_ssm_association.env_backend_1",
+    "aws_ssm_association.env_backend_2"
+) | ForEach-Object { "-target=$_" }
+
+terraform apply -auto-approve @varArgs @targets
+
+if ($LASTEXITCODE -ne 0) { Set-Location $OriginalPath; throw "Erro no terraform apply." }
 
 Set-Location $OriginalPath
 Write-Host "[DEPLOY - BACKEND] Concluído!" -ForegroundColor Green

@@ -30,11 +30,18 @@ Write-Host "[DEPLOY - INOVACAO] Iniciando deploy da Inovação..." -ForegroundCo
 Set-Location (Join-Path $PSScriptRoot "..")
 
 terraform init -reconfigure
-terraform apply -auto-approve @varArgs `
-    -target=module.ec2_chatbot `
-    -target=module.ec2_webscraping `
-    -target=aws_ssm_association.env_bot `
-    -target=aws_ssm_association.env_webscraping
+if ($LASTEXITCODE -ne 0) { Set-Location $OriginalPath; throw "Erro no terraform init." }
+
+$targets = @(
+    "module.ec2_chatbot",
+    "module.ec2_webscraping",
+    "aws_ssm_association.env_bot",
+    "aws_ssm_association.env_webscraping"
+) | ForEach-Object { "-target=$_" }
+
+terraform apply -auto-approve @varArgs @targets
+
+if ($LASTEXITCODE -ne 0) { Set-Location $OriginalPath; throw "Erro no terraform apply." }
 
 Set-Location $OriginalPath
 Write-Host "[DEPLOY - INOVACAO] Concluído!" -ForegroundColor Green
