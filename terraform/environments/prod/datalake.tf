@@ -58,23 +58,26 @@ resource "aws_s3_object" "lambda_raw_to_trusted_zip" {
   bucket = module.s3_raw.bucket_id
   key    = "lambdas/raw_to_trusted.zip"
   source = "${local.lambda_zips_dir}/raw_to_trusted.zip"
+  etag   = filemd5("${local.lambda_zips_dir}/raw_to_trusted.zip")
 }
 
 resource "aws_s3_object" "lambda_trusted_to_refined_zip" {
   bucket = module.s3_raw.bucket_id
   key    = "lambdas/trusted_to_refined.zip"
   source = "${local.lambda_zips_dir}/trusted_to_refined.zip"
+  etag   = filemd5("${local.lambda_zips_dir}/trusted_to_refined.zip")
 }
 
 # Funções Lambda
 resource "aws_lambda_function" "raw_to_trusted" {
-  depends_on    = [aws_s3_object.lambda_raw_to_trusted_zip]
-  function_name = "solarway-raw-to-trusted"
-  handler       = "main.handler"
-  runtime       = "python3.9"
-  role          = data.aws_iam_role.lab_role.arn
-  s3_bucket     = module.s3_raw.bucket_id
-  s3_key        = aws_s3_object.lambda_raw_to_trusted_zip.key
+  depends_on       = [aws_s3_object.lambda_raw_to_trusted_zip]
+  function_name    = "solarway-raw-to-trusted"
+  handler          = "main.handler"
+  runtime          = "python3.9"
+  role             = data.aws_iam_role.lab_role.arn
+  s3_bucket        = module.s3_raw.bucket_id
+  s3_key           = aws_s3_object.lambda_raw_to_trusted_zip.key
+  source_code_hash = filebase64sha256("${local.lambda_zips_dir}/raw_to_trusted.zip")
 
   environment {
     variables = {
@@ -84,13 +87,14 @@ resource "aws_lambda_function" "raw_to_trusted" {
 }
 
 resource "aws_lambda_function" "trusted_to_refined" {
-  depends_on    = [aws_s3_object.lambda_trusted_to_refined_zip]
-  function_name = "solarway-trusted-to-refined"
-  handler       = "main.handler"
-  runtime       = "python3.9"
-  role          = data.aws_iam_role.lab_role.arn
-  s3_bucket     = module.s3_raw.bucket_id
-  s3_key        = aws_s3_object.lambda_trusted_to_refined_zip.key
+  depends_on       = [aws_s3_object.lambda_trusted_to_refined_zip]
+  function_name    = "solarway-trusted-to-refined"
+  handler          = "main.handler"
+  runtime          = "python3.9"
+  role             = data.aws_iam_role.lab_role.arn
+  s3_bucket        = module.s3_raw.bucket_id
+  s3_key           = aws_s3_object.lambda_trusted_to_refined_zip.key
+  source_code_hash = filebase64sha256("${local.lambda_zips_dir}/trusted_to_refined.zip")
 
   environment {
     variables = {
