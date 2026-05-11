@@ -47,6 +47,26 @@ $varArgs = $TF_VARS.GetEnumerator() | ForEach-Object {
     "-var=`"$($_.Key)=$($val)`"" 
 }
 
+# -- Pré-download dos ZIPs das Lambdas do GitHub Releases ---------------------
+$TerraformDir  = Join-Path $PSScriptRoot ".."
+$LambdaZipsDir = Join-Path $TerraformDir ".terraform\lambda_zips"
+$GhBase        = "https://github.com/Projeto-de-extensao-Grupo-06/data-analysis/releases/download/latest"
+
+if (-not (Test-Path $LambdaZipsDir)) {
+    New-Item -ItemType Directory -Force -Path $LambdaZipsDir | Out-Null
+}
+
+Write-Host "[DEPLOY - PROD] Baixando Lambda ZIPs do GitHub Releases..." -ForegroundColor Cyan
+foreach ($zip in @("raw_to_trusted.zip", "trusted_to_refined.zip")) {
+    $dest = Join-Path $LambdaZipsDir $zip
+    Write-Host "  -> $zip" -ForegroundColor Gray
+    Invoke-WebRequest -Uri "$GhBase/$zip" -OutFile $dest -UseBasicParsing
+    if (-not (Test-Path $dest) -or (Get-Item $dest).Length -eq 0) {
+        throw "Falha ao baixar $zip de $GhBase/$zip"
+    }
+    Write-Host "  OK: $('{0:N1}' -f ((Get-Item $dest).Length / 1MB)) MB baixados." -ForegroundColor Green
+}
+
 # -- Terraform Init ------------------------------------------------------------
 Write-Host "[DEPLOY - PROD] Inicializando Terraform..." -ForegroundColor Cyan
 Set-Location (Join-Path $PSScriptRoot "..")

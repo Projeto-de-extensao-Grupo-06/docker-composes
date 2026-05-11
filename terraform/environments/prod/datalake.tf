@@ -1,25 +1,27 @@
 # datalake.tf - PROD (Data Lake Domain: S3 + Lambdas + Grafana)
 
+data "aws_caller_identity" "current" {}
+
 # -- S3 Buckets (Data Lake Layers) ---------------------------------------------
 module "s3_raw" {
   source = "../../modules/s3"
 
   environment = "prod"
-  bucket_name = "solarway-datalake-raw"
+  bucket_name = "solarway-datalake-raw-${data.aws_caller_identity.current.account_id}"
 }
 
 module "s3_trusted" {
   source = "../../modules/s3"
 
   environment = "prod"
-  bucket_name = "solarway-datalake-trusted"
+  bucket_name = "solarway-datalake-trusted-${data.aws_caller_identity.current.account_id}"
 }
 
 module "s3_refined" {
   source = "../../modules/s3"
 
   environment = "prod"
-  bucket_name = "solarway-datalake-refined"
+  bucket_name = "solarway-datalake-refined-${data.aws_caller_identity.current.account_id}"
 }
 
 resource "aws_vpc_endpoint" "s3" {
@@ -43,63 +45,102 @@ data "aws_iam_role" "lab_role" {
   name = "LabRole"
 }
 
-# Download das Lambdas do GitHub Releases (Triggers no apply)
-resource "null_resource" "download_lambdas" {
-  triggers = {
-    always_run = timestamp()
-  }
-
-  provisioner "local-exec" {
-    # Em um ambiente de CI real, o download ocorreria na pipeline antes do terraform apply.
-    # Usando curl com -f (fail silenciosamente no HTTP error) e removendo o arquivo em caso de falha.
-    command = "curl -f -L -o ${path.module}/.terraform/raw_to_refined.zip https://github.com/Projeto-de-extensao-Grupo-06/data-analysis/releases/download/latest/raw_to_refined.zip || rm -f ${path.module}/.terraform/raw_to_refined.zip || del /f /q ${path.module}\\.terraform\\raw_to_refined.zip"
-  }
+# Os ZIPs são pré-baixados pelo deploy-prod.ps1 antes do terraform apply/validate.
+# GitHub Releases:
+#   raw_to_trusted.zip   -> releases/download/latest/raw_to_trusted.zip
+#   trusted_to_refined.zip -> releases/download/latest/trusted_to_refined.zip
+locals {
+  lambda_zips_dir = "${path.module}/.terraform/lambda_zips"
 }
 
-resource "null_resource" "download_lambdas_trusted" {
-  triggers = {
-    always_run = timestamp()
-  }
-
-  provisioner "local-exec" {
-    command = "curl -L -o ${path.module}/.terraform/trusted_to_refined.zip https://github.com/Projeto-de-extensao-Grupo-06/data-analysis/releases/download/latest/trusted_to_refined.zip || echo 'Falha ao baixar, verifique a URL'"
-  }
-}
-
-# Upload dos binários para o S3 (Contorno do limite de 50MB da AWS API)
+# Upload dos binários para o S3 (ZIPs ~59MB — acima do limite direto da API Lambda)
 resource "aws_s3_object" "lambda_raw_to_trusted_zip" {
-  depends_on = [null_resource.download_lambdas]
-  bucket     = module.s3_raw.bucket_id
-  key        = "lambdas/raw_to_refined.zip"
-  source     = fileexists("${path.module}/.terraform/raw_to_refined.zip") ? "${path.module}/.terraform/raw_to_refined.zip" : "${path.module}/.terraform/lambda_dummy.zip"
+  bucket = module.s3_raw.bucket_id
+  key    = "lambdas/raw_to_trusted.zip"
+  source = "${local.lambda_zips_dir}/raw_to_trusted.zip"
 }
 
 resource "aws_s3_object" "lambda_trusted_to_refined_zip" {
-  depends_on = [null_resource.download_lambdas_trusted]
-  bucket     = module.s3_raw.bucket_id
-  key        = "lambdas/trusted_to_refined.zip"
-  source     = fileexists("${path.module}/.terraform/trusted_to_refined.zip") ? "${path.module}/.terraform/trusted_to_refined.zip" : "${path.module}/.terraform/lambda_dummy.zip"
+  bucket = module.s3_raw.bucket_id
+  key    = "lambdas/trusted_to_refined.zip"
+  source = "${local.lambda_zips_dir}/trusted_to_refined.zip"
 }
 
-# Criação das funções Lambda (utilizando S3)
+# Funções Lambda
 resource "aws_lambda_function" "raw_to_trusted" {
-  depends_on       = [aws_s3_object.lambda_raw_to_trusted_zip]
-  function_name    = "solarway-raw-to-trusted"
-  handler          = "main.handler"
-  runtime          = "python3.9"
-  role             = data.aws_iam_role.lab_role.arn
-  s3_bucket        = module.s3_raw.bucket_id
-  s3_key           = aws_s3_object.lambda_raw_to_trusted_zip.key
+  depends_on    = [aws_s3_object.lambda_raw_to_trusted_zip]
+  function_name = "solarway-raw-to-trusted"
+  handler       = "main.handler"
+  runtime       = "python3.9"
+  role          = data.aws_iam_role.lab_role.arn
+  s3_bucket     = module.s3_raw.bucket_id
+  s3_key        = aws_s3_object.lambda_raw_to_trusted_zip.key
+
+  environment {
+    variables = {
+      TRUSTED_BUCKET = module.s3_trusted.bucket_id
+    }
+  }
 }
 
 resource "aws_lambda_function" "trusted_to_refined" {
-  depends_on       = [aws_s3_object.lambda_trusted_to_refined_zip]
-  function_name    = "solarway-trusted-to-refined"
-  handler          = "main.handler"
-  runtime          = "python3.9"
-  role             = data.aws_iam_role.lab_role.arn
-  s3_bucket        = module.s3_raw.bucket_id
-  s3_key           = aws_s3_object.lambda_trusted_to_refined_zip.key
+  depends_on    = [aws_s3_object.lambda_trusted_to_refined_zip]
+  function_name = "solarway-trusted-to-refined"
+  handler       = "main.handler"
+  runtime       = "python3.9"
+  role          = data.aws_iam_role.lab_role.arn
+  s3_bucket     = module.s3_raw.bucket_id
+  s3_key        = aws_s3_object.lambda_trusted_to_refined_zip.key
+
+  environment {
+    variables = {
+      REFINED_BUCKET = module.s3_refined.bucket_id
+    }
+  }
+}
+
+# -- Gatilhos S3 -> Lambda -------------------------------------------------------
+
+# Permissão para o S3 invocar a Lambda raw_to_trusted
+resource "aws_lambda_permission" "allow_s3_raw" {
+  statement_id  = "AllowS3Raw"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.raw_to_trusted.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = module.s3_raw.bucket_arn
+}
+
+# Permissão para o S3 invocar a Lambda trusted_to_refined
+resource "aws_lambda_permission" "allow_s3_trusted" {
+  statement_id  = "AllowS3Trusted"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.trusted_to_refined.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = module.s3_trusted.bucket_arn
+}
+
+# Gatilho: upload no bucket RAW -> dispara raw_to_trusted
+resource "aws_s3_bucket_notification" "raw_trigger" {
+  depends_on = [aws_lambda_permission.allow_s3_raw]
+  bucket     = module.s3_raw.bucket_id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.raw_to_trusted.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "raw/"
+  }
+}
+
+# Gatilho: upload no bucket TRUSTED -> dispara trusted_to_refined
+resource "aws_s3_bucket_notification" "trusted_trigger" {
+  depends_on = [aws_lambda_permission.allow_s3_trusted]
+  bucket     = module.s3_trusted.bucket_id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.trusted_to_refined.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "trusted/"
+  }
 }
 
 # -- Grafana (Data Visualization) ----------------------------------------------

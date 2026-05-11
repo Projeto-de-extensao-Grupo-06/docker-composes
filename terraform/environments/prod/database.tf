@@ -31,7 +31,7 @@ resource "aws_ssm_association" "env_db" {
 
   parameters = {
     commands = "echo '${base64encode(join("\n", [for s in [
-      "mkdir -p /tmp/solarway/services/db/mysql-init",
+      "mkdir -p /tmp/solarway/services/db/init-oltp /tmp/solarway/services/db/init-olap",
       "cat > /tmp/solarway/.env << 'ENVEOF'",
       templatefile("${path.module}/templates/env.db.tmpl", {
         db_username         = var.db_username
@@ -44,16 +44,20 @@ resource "aws_ssm_association" "env_db" {
       "cat > /tmp/solarway/services/db/docker-compose.yml << 'COMPOSEEOF'",
       file("../../../services/db/docker-compose.yml"),
       "COMPOSEEOF",
-      "cat > /tmp/solarway/services/db/mysql-init/init.sql << 'SQLEOF'",
-      file("../../../services/db/mysql-init/init.sql"),
-      "SQLEOF",
+      "cat > /tmp/solarway/services/db/init-oltp/oltp.sql << 'OLTPEOF'",
+      file("../../../services/db/init-oltp/oltp.sql"),
+      "OLTPEOF",
+      "cat > /tmp/solarway/services/db/init-olap/olap.sql << 'OLAPEOF'",
+      file("../../../services/db/init-olap/olap.sql"),
+      "OLAPEOF",
       "cat > /tmp/solarway/setup-app.sh << 'EOF'",
       file("${path.module}/scripts/setup-db.sh"),
       "EOF",
       "chmod +x /tmp/solarway/setup-app.sh",
       "sed -i 's/\\r$//' /tmp/solarway/setup-app.sh",
       "sudo bash /tmp/solarway/setup-app.sh",
-      "sudo docker exec -i mysql-db mysql -u root -p'${var.db_password}' solarway < /tmp/solarway/services/db/mysql-init/init.sql"
+      "sudo docker exec -i mysql-db-oltp mysql -u root -p'${var.db_password}' solarway < /tmp/solarway/services/db/init-oltp/oltp.sql || true",
+      "sudo docker exec -i mysql-db-olap mysql -u root -p'${var.db_password}' solarway < /tmp/solarway/services/db/init-olap/olap.sql || true"
     ] : replace(s, "\r", "")]))}' | base64 -d | bash"
   }
 }
