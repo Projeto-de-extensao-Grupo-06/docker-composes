@@ -24,6 +24,13 @@ module "s3_refined" {
   bucket_name = "solarway-datalake-refined-${data.aws_caller_identity.current.account_id}"
 }
 
+module "s3_backup" {
+  source = "../../modules/s3"
+
+  environment = "prod"
+  bucket_name = "solarway-backup-123123213123523412"
+}
+
 resource "aws_vpc_endpoint" "s3" {
   vpc_id       = module.vpc_prod.vpc_id
   service_name = "com.amazonaws.us-east-1.s3"

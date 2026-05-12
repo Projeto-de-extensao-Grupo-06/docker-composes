@@ -21,12 +21,18 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${PORT_MYSQL_OLTP:-3306}:3306" # Exposta na porta padrao 3306
+      - "${PORT_MYSQL_OLTP:-3306}:3306"
     volumes:
-      - ./init-oltp:/docker-entrypoint-initdb.d # Scripts de inicialização OLTP
+      - ./init-oltp:/docker-entrypoint-initdb.d
     restart: unless-stopped
     networks:
       - storage_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-${DB_PASSWORD}}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   db-olap:
     image: mysql:8.0
@@ -40,8 +46,56 @@ services:
     ports:
       - "${PORT_MYSQL_OLAP:-3308}:3308"
     volumes:
-      - ./init-olap:/docker-entrypoint-initdb.d # Scripts de inicialização OLAP
+      - ./init-olap:/docker-entrypoint-initdb.d
     restart: unless-stopped
+    networks:
+      - storage_network
+
+  # ---------------------------------------------------------------------------
+  # Backup do banco transacional (OLTP) → S3
+  # ---------------------------------------------------------------------------
+  backup-oltp:
+    image: mysql:8.0
+    container_name: mysql-backup-oltp
+    restart: unless-stopped
+    depends_on:
+      db-oltp:
+        condition: service_healthy
+    environment:
+      # ── MySQL OLTP ──────────────────────────────────────────────────────────
+      MYSQL_HOST:     db-oltp
+      MYSQL_PORT:     3306
+      MYSQL_DATABASE: solarway
+      MYSQL_USER:     root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-${DB_PASSWORD}}
+      # ── AWS ─────────────────────────────────────────────────────────────────
+      AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION:    ${AWS_DEFAULT_REGION:-us-east-1}
+      S3_BUCKET:             ${S3_BUCKET}
+      S3_PREFIX:             ${S3_PREFIX:-backups/oltp}
+      # ── Política de retenção ─────────────────────────────────────────────────
+      RETENTION_DAYS: ${RETENTION_DAYS:-30}
+      # ── Frequência cron (padrão: todo dia às 02:00) ──────────────────────────
+      BACKUP_CRON: ${BACKUP_CRON:-0 2 * * *}
+    volumes:
+      - ./dump_to_s3.sh:/usr/local/bin/dump_to_s3.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        apt-get update -qq && apt-get install -y -qq awscli cron > /dev/null
+
+        chmod +x /usr/local/bin/dump_to_s3.sh
+
+        echo "$${BACKUP_CRON} /usr/local/bin/dump_to_s3.sh >> /var/log/backup.log 2>&1" \
+          | crontab -
+
+        echo "[backup-oltp] Cron configurado: $${BACKUP_CRON}"
+        echo "[backup-oltp] Executando backup inicial..."
+        /usr/local/bin/dump_to_s3.sh
+
+        cron -f
     networks:
       - storage_network
 
