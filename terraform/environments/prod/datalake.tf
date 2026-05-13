@@ -75,6 +75,27 @@ resource "aws_s3_object" "lambda_trusted_to_refined_zip" {
   etag   = filemd5("${local.lambda_zips_dir}/trusted_to_refined.zip")
 }
 
+resource "aws_s3_object" "dash_ec2" {
+  bucket = module.s3_raw.bucket_id
+  key    = "dashboards/aws_ec2.json"
+  source = "../../../services/grafana/provisioning/dashboards/aws_ec2.json"
+  etag   = filemd5("../../../services/grafana/provisioning/dashboards/aws_ec2.json")
+}
+
+resource "aws_s3_object" "dash_lambda" {
+  bucket = module.s3_raw.bucket_id
+  key    = "dashboards/aws_lambda.json"
+  source = "../../../services/grafana/provisioning/dashboards/aws_lambda.json"
+  etag   = filemd5("../../../services/grafana/provisioning/dashboards/aws_lambda.json")
+}
+
+resource "aws_s3_object" "dash_billing" {
+  bucket = module.s3_raw.bucket_id
+  key    = "dashboards/aws_billing.json"
+  source = "../../../services/grafana/provisioning/dashboards/aws_billing.json"
+  etag   = filemd5("../../../services/grafana/provisioning/dashboards/aws_billing.json")
+}
+
 # Funções Lambda
 resource "aws_lambda_function" "raw_to_trusted" {
   depends_on       = [aws_s3_object.lambda_raw_to_trusted_zip]
@@ -179,8 +200,14 @@ module "ec2_grafana" {
 }
 
 resource "aws_ssm_association" "env_grafana" {
-  depends_on = [module.ec2_grafana]
-  name       = "AWS-RunShellScript"
+  depends_on = [
+    module.ec2_grafana,
+    aws_s3_object.dash_ec2,
+    aws_s3_object.dash_lambda,
+    aws_s3_object.dash_billing
+  ]
+  
+  name = "AWS-RunShellScript"
 
   targets {
     key    = "InstanceIds"
@@ -189,21 +216,50 @@ resource "aws_ssm_association" "env_grafana" {
 
   parameters = {
     commands = "echo '${base64encode(join("\n", [for s in [
+      "cloud-init status --wait",
+      
       "mkdir -p /tmp/solarway/services/grafana",
       "cat > /tmp/solarway/.env << 'ENVEOF'",
       "GRAFANA_USER=${var.grafana_user}",
       "GRAFANA_PASSWORD=${var.grafana_password}",
+      "AWS_ACCESS_KEY_ID=${var.aws_access_key}",
+      "AWS_SECRET_ACCESS_KEY=${var.aws_secret_key}",
+      "AWS_SESSION_TOKEN=${var.aws_session_token}",
       "ENVEOF",
       "cat > /tmp/solarway/services/grafana/docker-compose.yml << 'COMPOSEEOF'",
       file("../../../services/grafana/docker-compose.yml"),
       "COMPOSEEOF",
+      "mkdir -p /tmp/solarway/services/grafana/provisioning/datasources",
+      "cat > /tmp/solarway/services/grafana/provisioning/datasources/cloudwatch.yaml << 'DATASOURCEEOF'",
+      "apiVersion: 1",
+      "datasources:",
+      "  - name: AWS CloudWatch — prod",
+      "    type: cloudwatch",
+      "    jsonData:",
+      "      defaultRegion: us-east-1",
+      "      authType: credentials",
+      "      customMetricsNamespaces: Custom/prod/EC2",
+      "    secureJsonData:",
+      "      accessKey: $${AWS_ACCESS_KEY_ID}",
+      "      secretKey: $${AWS_SECRET_ACCESS_KEY}",
+      "      sessionToken: $${AWS_SESSION_TOKEN}",
+      "DATASOURCEEOF",
+      "mkdir -p /tmp/solarway/services/grafana/provisioning/dashboards",
+      "cat > /tmp/solarway/services/grafana/provisioning/dashboards/dashboards.yaml << 'DASHBOARDEOF'",
+      file("../../../services/grafana/provisioning/dashboards/dashboards.yaml"),
+      "DASHBOARDEOF",
+      "aws s3 cp s3://${module.s3_raw.bucket_id}/dashboards/aws_ec2.json /tmp/solarway/services/grafana/provisioning/dashboards/aws_ec2.json",
+      "aws s3 cp s3://${module.s3_raw.bucket_id}/dashboards/aws_lambda.json /tmp/solarway/services/grafana/provisioning/dashboards/aws_lambda.json",
+      "aws s3 cp s3://${module.s3_raw.bucket_id}/dashboards/aws_billing.json /tmp/solarway/services/grafana/provisioning/dashboards/aws_billing.json",
       "cat > /tmp/solarway/setup-app.sh << 'EOF'",
       file("${path.module}/scripts/setup-bot.sh"),
       "EOF",
       "export BOT_TYPE='grafana'",
       "chmod +x /tmp/solarway/setup-app.sh",
       "sed -i 's/\\r$//' /tmp/solarway/setup-app.sh",
-      "sudo -E bash /tmp/solarway/setup-app.sh"
-    ] : replace(s, "\r", "")]))}' | base64 -d | bash"
+      
+      # TRAVA Opcional: o -xe faz o script falhar e acusar erro no log se algo der errado (fail-fast)
+      "sudo -E bash -xe /tmp/solarway/setup-app.sh"
+    ] : replace(s, "\r", "")]))}' | base64 -d | bash -xe"
   }
 }

@@ -59,6 +59,10 @@ if (-not (Test-Path $LambdaZipsDir)) {
 Write-Host "[DEPLOY - PROD] Baixando Lambda ZIPs do GitHub Releases..." -ForegroundColor Cyan
 foreach ($zip in @("raw_to_trusted.zip", "trusted_to_refined.zip")) {
     $dest = Join-Path $LambdaZipsDir $zip
+    if (Test-Path $dest) {
+        Write-Host "  -> $zip ja existe, pulando download." -ForegroundColor Yellow
+        continue
+    }
     Write-Host "  -> $zip" -ForegroundColor Gray
     Invoke-WebRequest -Uri "$GhBase/$zip" -OutFile $dest -UseBasicParsing
     if (-not (Test-Path $dest) -or (Get-Item $dest).Length -eq 0) {

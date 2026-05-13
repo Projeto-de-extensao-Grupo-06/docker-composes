@@ -6,7 +6,7 @@ Set-Location "$PSScriptRoot\.."
 # Load GitHub Credentials from .env
 Get-Content .env | Foreach-Object {
     $name, $value = $_.split('=', 2)
-    if ($name -match "GITHUB_") {
+    if ($name -match "GITHUB_" -or $name -eq "MYSQL_ROOT_PASSWORD" -or $name -eq "DB_PASSWORD") {
         [Environment]::SetEnvironmentVariable($name, $value, "Process")
     }
 }
@@ -29,7 +29,8 @@ Write-Host "Aguardando MySQL (Monolito) ficar pronto (TCP 3306)..." -ForegroundC
 $maxRetries = 60   # 180s max
 $retries = 0
 do {
-    $result = docker exec mysql-db mysqladmin -u root -p06241234 -h 127.0.0.1 ping 2>&1
+    $rootPass = if ($env:MYSQL_ROOT_PASSWORD) { $env:MYSQL_ROOT_PASSWORD } else { "06241234" }
+    $result = docker exec mysql-db-oltp mysqladmin -u root -p$rootPass -h 127.0.0.1 ping 2>&1
     if ($result -match "mysqld is alive") {
         Write-Host "  MySQL (Monolito) pronto!" -ForegroundColor Green
         break
@@ -47,7 +48,8 @@ Write-Host "Aguardando MySQL (Microservico) ficar pronto (TCP 3306)..." -Foregro
 $retries = 0
 do {
     # Microservice DB usa root password do .env (DB_PASSWORD)
-    $result = docker exec microservice-db mysqladmin -u root -p06241234 -h 127.0.0.1 ping 2>&1
+    $microPass = if ($env:DB_PASSWORD) { $env:DB_PASSWORD } else { "06241234" }
+    $result = docker exec microservice-db mysqladmin -u root -p$microPass -h 127.0.0.1 ping 2>&1
     if ($result -match "mysqld is alive") {
         Write-Host "  MySQL (Microservico) pronto!" -ForegroundColor Green
         break
