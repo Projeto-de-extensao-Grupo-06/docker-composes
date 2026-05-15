@@ -14,7 +14,7 @@ Get-Content $DotEnvPath | ForEach-Object {
 
 $TF_VARS = @{
     "db_password"    = $envVars["DB_PASSWORD"]
-    "bucket_name"    = $envVars["BUCKET_NAME"]
+
     "email"          = $envVars["EMAIL"]
     "email_password" = $envVars["EMAIL_PASSWORD"]
     "bot_secret"     = $envVars["BOT_SECRET"]

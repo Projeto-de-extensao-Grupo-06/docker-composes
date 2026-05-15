@@ -25,7 +25,7 @@ $TF_VARS = @{
     "email_password"    = $envVars["EMAIL_PASSWORD"]
     "github_username"   = $envVars["GITHUB_USERNAME"]
     "github_token"      = $envVars["GITHUB_ACCESS_TOKEN"]
-    "bucket_name"       = $envVars["BUCKET_NAME"]
+
     "domain"            = if ($envVars.ContainsKey("DOMAIN")) { $envVars["DOMAIN"] } else { "solarway.test" }
     "grafana_user"      = if ($envVars.ContainsKey("GRAFANA_USER")) { $envVars["GRAFANA_USER"] } else { "admin" }
     "grafana_password"  = if ($envVars.ContainsKey("GRAFANA_PASSWORD")) { $envVars["GRAFANA_PASSWORD"] } else { "admin" }
