@@ -3,7 +3,8 @@
 Esta camada é o coração da persistência do Solarway. Ela fornece armazenamento relacional e cache para todos os domínios.
 
 ## 🗄️ Componentes
-- **MySQL (8.0)**: Banco de dados relacional (Solarway Core).
+- **MySQL OLTP (8.0)**: Banco de dados relacional transacional (Solarway Core). Focado em operações de leitura e escrita rápidas (Online Transaction Processing).
+- **MySQL OLAP (8.0)**: Banco de dados analítico (Data Lake Refined). Focado em consultas complexas para dashboards e BI (Online Analytical Processing).
 - **Redis (Multidb)**: Cache de alta performance e gerenciamento de sessões.
 
 ---
@@ -12,7 +13,8 @@ Esta camada é o coração da persistência do Solarway. Ela fornece armazenamen
 
 ### Acesso Interno (Docker)
 Os serviços se conectam via nome do container na rede `solarway_network`:
-- **MySQL**: `mysql-db:3306`
+- **MySQL OLTP**: `mysql-db-oltp:3306`
+- **MySQL OLAP**: `mysql-db-olap:3308`
 - **Redis**: `redis-multidb:6379`
 
 ### Acesso em Produção (AWS)
@@ -50,3 +52,13 @@ Este script:
 2. Inicializa o MySQL com o script `init.sql` (Schema e Seeds).
 3. Configura o Redis com persistência habilitada.
 4. Valida a saúde das portas 3306 e 6379 antes de finalizar.
+
+---
+
+## 💾 Backup Automatizado (S3)
+
+O serviço de banco de dados inclui um container auxiliar (`backup-oltp`) responsável por realizar dumps periódicos do banco MySQL (OLTP) e enviá-los para o S3.
+
+- **Script:** O container utiliza o script `dump_to_s3.sh` injetado via volume.
+- **Frequência:** O backup é agendado via Cron (padrão: diariamente às 02:00, configurável via variável `BACKUP_CRON`).
+- **Retenção:** Dumps mais antigos que `RETENTION_DAYS` (padrão: 30 dias) são deletados automaticamente do S3 para economizar custos.

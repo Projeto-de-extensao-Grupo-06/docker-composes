@@ -14,7 +14,7 @@ A arquitetura foi **pulverizada** em domínios independentes para facilitar a es
   - `management-system/`: Painel administrativo React.
 - **`services/bot/`**: Automação inteligente via WhatsApp (n8n + WAHA + Redis).
 - **`services/web-scrapping/`**: Job batch para atualização de preços (Mercado Livre).
-- **`services/db/`**: Camada de persistência (MySQL + Redis).
+- **`services/db/`**: Camada de persistência (MySQL OLTP e OLAP + Redis).
 - **`services/proxy/`**: Ingress Gateway (Nginx) para roteamento de tráfego.
 
 ---
@@ -48,12 +48,16 @@ Para rodar todo o ecossistema em sua máquina local via Docker Compose:
 
 A infraestrutura em produção é gerenciada via **Terraform** e dividida em domínios isolados para segurança e performance.
 
-### Estratégia de Deploy Modular
-Os deploys foram separados por domínios. Você pode aplicar mudanças em toda a infra ou em partes específicas:
+### Estratégia de Deploy Modular e Pulverização (Terraform + Scripts)
+A infraestrutura foi desenhada com uma forte separação e **pulverização** de responsabilidades:
+- **Arquivos `.tf` (Terraform):** Declaram e provisionam a infraestrutura bruta na AWS (VPCs, EC2, S3, IAM, etc).
+- **Scripts `.ps1` (PowerShell):** Orquestram o deploy de forma isolada por domínio. Eles injetam variáveis do `.env`, empacotam Lambdas, preparam templates de *user_data* e disparam o `terraform apply` apenas para o componente (module) necessário.
+
+Essa separação permite que você atualize ou recrie partes específicas da infraestrutura (como apenas o Backend ou apenas o Frontend) sem afetar o resto do ecossistema:
 
 | Script de Deploy | Domínio Afetado | Componentes |
 |------------------|-----------------|-------------|
-| `deploy-db.ps1` | **Database** | MySQL, Redis |
+| `deploy-db.ps1` | **Database** | MySQL (OLTP e OLAP), Redis |
 | `deploy-backend.ps1` | **Backend** | Monolito, Microserviços |
 | `deploy-frontend.ps1` | **Frontend** | React Apps (Management & Institucional) |
 | `deploy-inovacao.ps1` | **Inovação** | Chatbot (n8n), Webscraping |
@@ -75,7 +79,10 @@ O projeto utiliza um Data Lake em 3 camadas no S3:
 2. **Silver (Trusted)**: Dados limpos e tipados.
 3. **Gold (Refined)**: Dados prontos para BI e Analytics.
 
-**Visualização**: Um dashboard **Grafana** é provisionado automaticamente na camada de Data Lake para monitoramento de métricas e saúde do sistema.
+**Observabilidade e Analytics (Grafana)**:
+A stack de monitoramento utiliza o **Grafana** provisionado automaticamente junto com o Data Lake. Ele atende a dois propósitos principais:
+- **Observabilidade da Infraestrutura**: Conecta-se ao AWS CloudWatch para exibir dashboards de saúde, métricas de consumo de EC2, tempo de execução de Lambdas e logs em tempo real.
+- **Dashboards Analytics**: Conecta-se ao banco de dados MySQL OLAP (Data Lake Refined) para fornecer métricas e inteligência de negócios para a equipe.
 
 ---
 

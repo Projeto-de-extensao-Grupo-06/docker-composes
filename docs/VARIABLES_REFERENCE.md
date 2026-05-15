@@ -39,8 +39,6 @@
 | `EMAIL_PASSWORD` | 🔴 | — | Monolito | Senha/App Password do e-mail |
 | `MAIL_HOST` | 🟢 | `smtp.gmail.com` | Monolito | Host SMTP para envio de e-mail |
 | `MAIL_PORT` | 🟢 | `587` | Monolito | Porta SMTP |
-| `BACKEND_BASE_URL` | 🟡 | `http://localhost:8000` | Frontend | URL do backend (usada pelo frontend para chamadas diretas) |
-| `VITE_BACKEND_BASE_URL` | 🟡 | `http://localhost:8000/api` | Frontend | URL da API para o Vite (build-time) |
 | `PORT_BACKEND_MONOLITH` | 🟢 | `8000` | Monolito | Porta externa do monolito |
 | `PORT_BACKEND_MICROSERVICE` | 🟢 | `8082` | Microservice | Porta externa do microserviço |
 | `BOT_SECRET` | 🔴 | — | Monolito, Bot | Chave simétrica para autenticação do bot no backend |
@@ -118,7 +116,7 @@
 | `AWS_ACCESS_KEY_ID` | 🔴 | — | Terraform, Backend | Chave de acesso AWS (expira com sessão Academy) |
 | `AWS_SECRET_ACCESS_KEY` | 🔴 | — | Terraform, Backend | Chave secreta AWS |
 | `AWS_SESSION_TOKEN` | 🟡 | — | Terraform, Backend | Token de sessão (AWS Academy obrigatório) |
-| `BUCKET_NAME` | 🔴 | `solarway-datalake-silver` | Backend | Nome do bucket S3 do Data Lake |
+
 | `AWS_KEY_NAME` | 🟡 | `solarway` | Terraform (SSH deploys) | Nome da chave `.pem` na AWS |
 
 ---
@@ -128,7 +126,6 @@
 | Variável | Local | QA | Prod |
 |----------|:-----:|:--:|:----:|
 | `N8N_BASE_URL` | Localhost | Sobrescrita pelo bootstrap | Via `setup-proxy.sh` |
-| `BACKEND_BASE_URL` | Localhost | Sobrescrita pelo bootstrap | IP privado da VPC |
 | `WAHA_DASHBOARD_NO_PASSWORD` | `true` | `true` | ⚠️ `false` |
 | `AWS_*` | Sessão local | Não usada na EC2 | Via IAM Instance Profile |
 

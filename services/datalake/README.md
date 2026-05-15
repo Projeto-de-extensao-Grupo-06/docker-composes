@@ -9,6 +9,11 @@ Os dados fluem através de três camadas principais, representadas por buckets S
 - **Trusted (Confiável):** `solarway-datalake-trusted`. Onde os dados passam por limpeza, tipagem e padronização.
 - **Refined (Refinado):** `solarway-datalake-refined`. Onde os dados são enriquecidos e modelados para consumo final (Business Intelligence).
 
+> [!NOTE]
+> **Provisionamento de Buckets:**
+> Todos os buckets S3 são provisionados dinamicamente via Terraform (`datalake.tf`), concatenando um sufixo (Account ID da AWS) para garantir nomes globalmente únicos.
+> Portanto, a variável de ambiente `BUCKET_NAME` anteriormente configurada no arquivo `.env` foi declarada **obsoleta/inútil**, pois os serviços interagem com os recursos consumindo dados propagados internamente ou passados por injeção na AWS diretamente pelas configurações do Terraform (sem depender de configuração estática).
+
 ---
 
 ## Decisões Arquiteturais e Open Questions
