@@ -1,0 +1,16 @@
+apiVersion: 1
+
+playlists:
+  - name: "Observability"
+    uid: "playlist-observability"
+    interval: "5m"
+    items:
+      - type: dashboard_by_tag
+        value: "observability"
+
+  - name: "Analytics"
+    uid: "playlist-analytics"
+    interval: "5m"
+    items:
+      - type: dashboard_by_tag
+        value: "analytics"

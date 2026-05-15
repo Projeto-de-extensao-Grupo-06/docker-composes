@@ -32,7 +32,7 @@ echo "[VM-SETUP] Conectividade estabelecida!"
 echo "[VM-SETUP] Aguardando liberacao do apt lock..."
 while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done
 
-echo "[VM-SETUP] Atualizando repositórios e pacotes bÃ¡sicos..."
+echo "[VM-SETUP] Atualizando repositórios e pacotes básicos..."
 sudo apt-get -y update
 sudo apt-get -y install -y ca-certificates curl gnupg lsb-release git unzip
 
@@ -54,7 +54,7 @@ TARGET_USER=${SUDO_USER:-ubuntu}
 if ! id "$TARGET_USER" &>/dev/null; then TARGET_USER="root"; fi
 sudo usermod -aG docker "$TARGET_USER" || true
 
-echo "➡ [VM-SETUP] Criando redes Docker padrao do Solarway..."
+echo "[VM-SETUP] Criando redes Docker padrao do Solarway..."
 sudo docker network create solarway_network 2>/dev/null || true
 sudo docker network create storage_network 2>/dev/null || true
 

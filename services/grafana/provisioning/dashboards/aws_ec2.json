@@ -1536,7 +1536,8 @@
     "Amazon",
     "AWS",
     "CloudWatch",
-    "EC2"
+    "EC2",
+    "observability"
   ],
   "templating": {
     "list": [

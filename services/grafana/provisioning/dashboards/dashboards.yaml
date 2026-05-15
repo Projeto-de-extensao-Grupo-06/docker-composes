@@ -1,9 +1,20 @@
 apiVersion: 1
 
 providers:
-  - name: 'Default'
+  - name: "observability-dashboards"
     orgId: 1
-    folder: ''
+    folder: "Observability"       # pasta visível na UI
+    folderUid: "folder-observability"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+
+  - name: "analytics-dashboards"
+    orgId: 1
+    folder: "Analytics"
+    folderUid: "folder-analytics"
     type: file
     disableDeletion: false
     editable: true

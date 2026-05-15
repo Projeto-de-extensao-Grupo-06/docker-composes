@@ -11,6 +11,8 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_VIEWERS_CAN_EDIT=false
+      - GF_USERS_EDITORS_CAN_ADMIN=false
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
@@ -18,6 +20,26 @@ services:
       - grafana_data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning
     restart: unless-stopped
+    networks:
+      - solarway_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  grafana-setup:
+    image: curlimages/curl:latest
+    container_name: grafana-setup
+    depends_on:
+      grafana:
+        condition: service_healthy
+    environment:
+      - GRAFANA_USER=${GRAFANA_USER:-admin}
+      - GRAFANA_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - ./provisioning/setup.sh:/setup.sh
+    entrypoint: ["sh", "/setup.sh"]
     networks:
       - solarway_network
 

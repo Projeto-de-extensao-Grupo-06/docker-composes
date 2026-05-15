@@ -391,7 +391,8 @@
   "schemaVersion": 40,
   "tags": [
     "monitoringartist",
-    "cloudwatch"
+    "cloudwatch",
+    "observability"
   ],
   "templating": {
     "list": [
