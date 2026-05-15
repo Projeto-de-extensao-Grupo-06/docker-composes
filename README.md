@@ -93,3 +93,18 @@ Certifique-se de configurar o arquivo `.env` na raiz do projeto com as seguintes
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`: Credenciais da AWS.
 - `DB_PASSWORD`, `REDIS_PASSWORD`: Senhas de infraestrutura.
 - `EMAIL`, `EMAIL_PASSWORD`: Para notificações do backend.
+
+---
+
+## 🛠️ Diagnóstico e Caminho dos Logs (AWS)
+
+Ao acessar uma instância EC2 via **AWS Systems Manager (Session Manager)** para diagnóstico, você pode encontrar os logs de provisionamento e instalação nos seguintes caminhos:
+
+1. **Logs do Cloud-Init (`user_data`)**:
+   - `/var/log/cloud-init-output.log` e `/var/log/cloud-init.log`
+   - **O que tem lá:** Registros do primeiro boot, injeção dos scripts do Terraform e execução inicial (incluindo o início do script de setup-vm).
+2. **Logs do Setup VM (`solarway-setup-vm`)**:
+   - `/var/log/solarway-setup-vm.log` (E no log principal do `syslog`)
+   - **O que tem lá:** Logs da instalação do Docker, AWS CLI, configuração de redes Docker internas (`solarway_network` e `storage_network`) e espera por conectividade com a internet.
+3. **Logs do Setup de Aplicação (`solarway-setup`)**:
+   - Para depurar os scripts de setup finais que sobem os containers (injetados via associações de SSM, como o `setup-backend.sh` ou `setup-app.sh`), verifique os retornos de execução diretamente na console do **AWS Systems Manager > Run Command**, pois os comandos são disparados pela interface de gerência da AWS após o cloud-init e não gravam arquivos textuais soltos por padrão (exibem standard output e error na própria nuvem).
