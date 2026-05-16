@@ -55,49 +55,59 @@ services:
   # Backup do banco transacional (OLTP) → S3
   # ---------------------------------------------------------------------------
   backup-oltp:
-    image: mysql:8.0
+    image: amazon/aws-cli:latest
     container_name: mysql-backup-oltp
     restart: unless-stopped
+
     depends_on:
       db-oltp:
         condition: service_healthy
+
     environment:
-      # ── MySQL OLTP ──────────────────────────────────────────────────────────
-      MYSQL_HOST:     db-oltp
-      MYSQL_PORT:     3306
+      MYSQL_HOST: db-oltp
+      MYSQL_PORT: 3306
       MYSQL_DATABASE: solarway
-      MYSQL_USER:     root
+      MYSQL_USER: root
       MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-${DB_PASSWORD}}
-      # ── AWS ─────────────────────────────────────────────────────────────────
-      AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID}
+
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_DEFAULT_REGION:    ${AWS_DEFAULT_REGION:-us-east-1}
-      S3_BUCKET:             ${S3_BUCKET}
-      S3_PREFIX:             ${S3_PREFIX:-backups/oltp}
-      # ── Política de retenção ─────────────────────────────────────────────────
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+
+      S3_BUCKET: ${S3_BUCKET}
+      S3_PREFIX: ${S3_PREFIX:-backups/oltp}
+
       RETENTION_DAYS: ${RETENTION_DAYS:-30}
-      # ── Frequência cron (padrão: todo dia às 02:00) ──────────────────────────
-      BACKUP_CRON: ${BACKUP_CRON:-0 2 * * *}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+      EMAIL_TO: ${EMAIL_TO}
+
     volumes:
       - ./dump_to_s3.sh:/usr/local/bin/dump_to_s3.sh:ro
+
     entrypoint: ["/bin/sh", "-c"]
+
     command:
       - |
         set -e
-        apt-get update -qq && apt-get install -y -qq awscli cron > /dev/null
 
-        chmod +x /usr/local/bin/dump_to_s3.sh
+        dnf install -y mariadb105 gzip python3 cronie
 
-        echo "$${BACKUP_CRON} /usr/local/bin/dump_to_s3.sh >> /var/log/backup.log 2>&1" \
+        echo "[backup-oltp] configurando cron..."
+
+        echo "${BACKUP_CRON} /usr/local/bin/dump_to_s3.sh >> /var/log/backup.log 2>&1" \
           | crontab -
 
-        echo "[backup-oltp] Cron configurado: $${BACKUP_CRON}"
-        echo "[backup-oltp] Executando backup inicial..."
-        /usr/local/bin/dump_to_s3.sh
+        echo "[backup-oltp] cron configurado: ${BACKUP_CRON}"
 
-        cron -f
+        # inicia cron em foreground
+        crond -n
     networks:
-      - storage_network
+    - storage_network
 
 networks:
   storage_network:
