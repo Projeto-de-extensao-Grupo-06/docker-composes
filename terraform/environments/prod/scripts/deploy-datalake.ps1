@@ -33,24 +33,26 @@ $TF_VARS = @{
 
 $varArgs = $TF_VARS.GetEnumerator() | ForEach-Object { "-var=`"$($_.Key)=$($_.Value)`"" }
 
-# -- Pré-download dos ZIPs das Lambdas do GitHub Releases ----------------------
+# -- Validação local dos ZIPs das Lambdas --------------------------------------
 $TerraformDir  = Join-Path $PSScriptRoot ".."
 $LambdaZipsDir = Join-Path $TerraformDir ".terraform\lambda_zips"
-$GhBase        = "https://github.com/Projeto-de-extensao-Grupo-06/data-analysis/releases/download/latest"
-
 if (-not (Test-Path $LambdaZipsDir)) {
     New-Item -ItemType Directory -Force -Path $LambdaZipsDir | Out-Null
 }
 
-Write-Host "[DEPLOY - DATALAKE] Baixando Lambda ZIPs do GitHub Releases..." -ForegroundColor Cyan
-foreach ($zip in @("raw_to_trusted.zip", "trusted_to_refined.zip")) {
+Write-Host "[DEPLOY - DATALAKE] Validando Lambda ZIPs locais..." -ForegroundColor Cyan
+foreach ($zip in @(
+    "raw_to_trusted.zip",
+    "trusted_to_refined.zip",
+    "refined_to_socioeconomic.zip",
+    "socioeconomic_to_scoring.zip"
+)) {
     $dest = Join-Path $LambdaZipsDir $zip
     Write-Host "  -> $zip" -ForegroundColor Gray
-    Invoke-WebRequest -Uri "$GhBase/$zip" -OutFile $dest -UseBasicParsing
     if (-not (Test-Path $dest) -or (Get-Item $dest).Length -eq 0) {
-        throw "Falha ao baixar $zip de $GhBase/$zip"
+        throw "Arquivo ausente ou vazio: $dest"
     }
-    Write-Host "  OK: $('{0:N1}' -f ((Get-Item $dest).Length / 1MB)) MB baixados." -ForegroundColor Green
+    Write-Host "  OK: $('{0:N1}' -f ((Get-Item $dest).Length / 1MB)) MB encontrados." -ForegroundColor Green
 }
 
 # -- Terraform -----------------------------------------------------------------
@@ -61,18 +63,26 @@ terraform init -reconfigure
 if ($LASTEXITCODE -ne 0) { Set-Location $OriginalPath; throw "Erro no terraform init." }
 
 $targets = @(
-    "module.s3_raw",
-    "module.s3_trusted",
-    "module.s3_refined",
+    "aws_s3_bucket.datalake",
+    "aws_s3_bucket_server_side_encryption_configuration.datalake",
+    "aws_s3_bucket_public_access_block.datalake",
     "aws_vpc_endpoint.s3",
     "aws_s3_object.lambda_raw_to_trusted_zip",
     "aws_s3_object.lambda_trusted_to_refined_zip",
+    "aws_s3_object.lambda_refined_to_socioeconomic_zip",
+    "aws_s3_object.lambda_socioeconomic_to_scoring_zip",
     "aws_lambda_function.raw_to_trusted",
     "aws_lambda_function.trusted_to_refined",
+    "aws_lambda_function.refined_to_socioeconomic",
+    "aws_lambda_function.socioeconomic_to_scoring",
     "aws_lambda_permission.allow_s3_raw",
     "aws_lambda_permission.allow_s3_trusted",
+    "aws_lambda_permission.allow_s3_refined",
+    "aws_lambda_permission.allow_s3_socioeconomic",
     "aws_s3_bucket_notification.raw_trigger",
     "aws_s3_bucket_notification.trusted_trigger",
+    "aws_s3_bucket_notification.refined_trigger",
+    "aws_s3_bucket_notification.socioeconomic_trigger",
     "module.ec2_grafana",
     "aws_ssm_association.env_grafana"
 ) | ForEach-Object { "-target=$_" }
