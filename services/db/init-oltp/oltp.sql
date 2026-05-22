@@ -241,17 +241,18 @@ INSERT IGNORE INTO coworker (id_coworker, first_name, last_name, email, phone, p
 INSERT IGNORE INTO address (id_address, postal_code, street_name, number, neighborhood, city, state, type) VALUES
 (1, '13010-050', 'Rua XV de Novembro', '123', 'Centro', 'Campinas', 'SP', 'RESIDENTIAL'),
 (2, '01311-000', 'Av. Paulista', '2000', 'Bela Vista', 'São Paulo', 'SP', 'BUILDING'),
-(3, '88015-000', 'Rua Bocaiúva', '90', 'Centro', 'Florianópolis', 'SC', 'COMMERCIAL'),
-(4, '22021-001', 'Av. Atlântica', '500', 'Copacabana', 'Rio de Janeiro', 'RJ', 'RESIDENTIAL'),
-(5, '30130-000', 'Rua da Bahia', '1000', 'Centro', 'Belo Horizonte', 'MG', 'COMMERCIAL'),
-(6, '70000-000', 'Asa Norte', 'SQN 102', 'Plano Piloto', 'Brasília', 'DF', 'RESIDENTIAL');
+(3, '08710-900', 'Rua Coronel Souza Franco', '440', 'Centro', 'Mogi das Cruzes', 'SP', 'COMMERCIAL'),
+(4, '08696-320', 'Rua Antônio Sebastião Sampaio', '520', 'Jardim Alterópolis', 'Suzano', 'SP', 'RESIDENTIAL'),
+(5, '08710-500', 'Avenida Voluntário Fernando Pinheiro Franco', '1269', 'Centro', 'Mogi das Cruzes', 'SP', 'COMMERCIAL'),
+(6, '08696-325', 'Rua Conceição Helena Evangelista Lucio', '102', 'Jardim Alterópolis', 'Suzano', 'SP', 'RESIDENTIAL');
 
 INSERT IGNORE INTO client (id_client, first_name, last_name, document_number, document_type, created_at, phone, email, fk_main_address, status) VALUES
-(1, 'João', 'Silva', '12345678901', 'CPF', '2025-08-01 10:00:00', '1933233431', 'ranierd.couto@gmail.com', 1, 'ACTIVE'),
-(2, 'Maria', 'Oliveira', '12345678902', 'CPF', '2025-09-10 14:30:00', '2199865432', 'maria.oliveira@example.com', 2, 'ACTIVE'),
-(3, 'Pedro', 'Santos', '11222333000144', 'CNPJ', '2025-10-05 09:00:00', '4899123456', 'pedro.santos@example.com', 3, 'ACTIVE'),
-(4, 'Lucia', 'Ferreira', '98765432100', 'CPF', '2025-10-20 11:00:00', '21988887777', 'lucia.ferreira@example.com', 4, 'ACTIVE'),
-(5, 'Empresa Tech', 'Solar', '55666777000199', 'CNPJ', '2025-11-01 15:45:00', '3133334444', 'contato@techsolar.com', 5, 'ACTIVE');
+(1, 'Lara', 'Silva', '12345678901', 'CPF', '2025-08-01 10:00:00', '1933233431', 'lara.soares@sptech.school', 1, 'ACTIVE'),
+(2, 'Ranier', 'Dalton', '12345678902', 'CPF', '2025-09-10 14:30:00', '2199865432', 'ranier.couto@sptech.school', 2, 'ACTIVE'),
+(3, 'Bryan', 'Gomes', '11222333000144', 'CNPJ', '2025-10-05 09:00:00', '4899123456', 'bryan.grocha@sptech.school', 3, 'ACTIVE'),
+(4, 'Victor', 'Massaini', '98765432100', 'CPF', '2025-10-20 11:00:00', '21988887777', 'victor.santos047@sptech.school', 4, 'ACTIVE'),
+(5, 'Aaaron', 'Cutipa', '55666777000199', 'CNPJ', '2025-11-01 15:45:00', '3133334444', 'aaron.canaviri@sptech.school', 5, 'ACTIVE'),
+(6, 'Fabricio', 'Ernandes', '99887766554', 'CPF', '2025-11-10 08:30:00', '1199998888', 'fabricio.ernandes@sptech.school', 6, 'ACTIVE');
 
 INSERT IGNORE INTO client (first_name, last_name, phone, email, status, document_number, document_type, created_at, updated_at) VALUES
 ('João', 'da Silva', '11999999999', 'joao@gmail.com', 'ACTIVE', '12345678900', 'CPF', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
