@@ -69,7 +69,7 @@
             {
               "value1": "={{ $json.chatId }}",
               "operation": "notEndsWith",
-              "value2": "=@g.us"
+              "value2": "@g.us"
             }
           ]
         }
@@ -293,13 +293,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.BACKEND_API_URL }}/api/auth/bot/login",
+        "url": "{{ $env.BACKEND_API_URL }}/api/auth/bot/login",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "x-bot-secret",
-              "value": "solarway_whatsapp_bot_super_secret"
+              "value": "{{ $env.BOT_SECRET }}"
             }
           ]
         },
@@ -396,7 +396,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.BACKEND_API_URL }}/api/clients/phone/{{ $fromAI('phone') }}",
+        "url": "{{ $env.BACKEND_API_URL }}/api/clients/phone/{{ $fromAI('phone') }}",
         "sendHeaders": true,
         "parametersHeaders": {
           "values": [
@@ -420,14 +420,14 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.BACKEND_API_URL }}/api/projects/bot",
+        "url": "{{ $env.BACKEND_API_URL }}/api/projects/bot",
         "sendHeaders": true,
         "parametersHeaders": {
           "values": [
             {
               "name": "Authorization",
               "valueProvider": "fieldValue",
-              "value": "=Bearer {{ $('Autenticar Bot (JWT)').first().json.token }}"
+              "value": "Bearer {{ $('Autenticar Bot (JWT)').first().json.token }}"
             }
           ]
         },
@@ -446,7 +446,7 @@
     },
     {
       "parameters": {
-        "url": "https://viacep.com.br/ws/{{ $fromAI('query').replace('-', '') }}/json/",
+        "url": "https://viacep.com.br/ws/{{ $fromAI('cep').replace('-', '') }}/json/",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",

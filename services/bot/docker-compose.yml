@@ -53,6 +53,7 @@ services:
       N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE: true
       BOT_SECRET: "${BOT_SECRET}"
       N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      N8N_EXPRESSIONS_ALLOWED_ENV_VARS: "BACKEND_API_URL,BOT_SECRET"
     volumes:
       - n8n_data:/home/node/.n8n
     ports:
