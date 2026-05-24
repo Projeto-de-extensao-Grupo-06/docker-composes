@@ -28,7 +28,7 @@ $TF_VARS = @{
     "bot_secret"     = $envVars["BOT_SECRET"]
     "email"          = $envVars["EMAIL"]
     "email_password" = $envVars["EMAIL_PASSWORD"]
-    "bucket_name"    = $envVars["BUCKET_NAME"]
+
     "github_username"= $envVars["GITHUB_USERNAME"]
     "github_token"   = $envVars["GITHUB_ACCESS_TOKEN"]
     "domain"         = if ($envVars.ContainsKey("DOMAIN")) { $envVars["DOMAIN"] } else { "solarway.test" }

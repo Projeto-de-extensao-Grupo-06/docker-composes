@@ -143,6 +143,31 @@ CREATE TABLE IF NOT EXISTS retry_queue (
     CONSTRAINT fk_retry_project FOREIGN KEY (fk_project) REFERENCES project(id_project)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS project_file (
+    id_project_file BIGINT AUTO_INCREMENT PRIMARY KEY,
+    filename VARCHAR(255),
+    original_filename VARCHAR(255),
+    created_at DATETIME(6),
+    mb_size INT,
+    check_sum VARCHAR(255),
+    homologation_doc BIT(1),
+    content_type VARCHAR(255),
+    fk_project BIGINT,
+    fk_coworker BIGINT,
+    CONSTRAINT fk_project_file_project FOREIGN KEY (fk_project) REFERENCES project(id_project),
+    CONSTRAINT fk_project_file_coworker FOREIGN KEY (fk_coworker) REFERENCES coworker(id_coworker)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS project_comment (
+    id_project_comment BIGINT AUTO_INCREMENT PRIMARY KEY,
+    comment TEXT,
+    created_at DATETIME(6),
+    fk_project BIGINT,
+    fk_coworker BIGINT,
+    CONSTRAINT fk_project_comment_project FOREIGN KEY (fk_project) REFERENCES project(id_project),
+    CONSTRAINT fk_project_comment_coworker FOREIGN KEY (fk_coworker) REFERENCES coworker(id_coworker)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS budget (
     id_budget BIGINT AUTO_INCREMENT PRIMARY KEY,
     subtotal DECIMAL(19,2),
@@ -166,6 +191,29 @@ CREATE TABLE IF NOT EXISTS budget_material (
     CONSTRAINT fk_bm_budget FOREIGN KEY (fk_budget) REFERENCES budget(id_budget),
     CONSTRAINT fk_bm_material_url FOREIGN KEY (fk_material_url) REFERENCES material_url(id_material_url)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS payment (
+    id_payment BIGINT AUTO_INCREMENT PRIMARY KEY,
+    method VARCHAR(255),
+    installments_count INT,
+    total_amount DECIMAL(19,2),
+    created_at DATETIME(6),
+    fk_budget BIGINT,
+    CONSTRAINT fk_payment_budget FOREIGN KEY (fk_budget) REFERENCES budget(id_budget)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS payment_installment (
+    id_payment_installment BIGINT AUTO_INCREMENT PRIMARY KEY,
+    installment_number INT,
+    amount DECIMAL(19,2),
+    due_date DATE,
+    paid_at DATETIME(6),
+    status VARCHAR(255),
+    fk_payment BIGINT,
+    CONSTRAINT fk_pi_payment FOREIGN KEY (fk_payment) REFERENCES payment(id_payment)
+) ENGINE=InnoDB;
+
 
 -- 3. Carga de Dados (Inserts)
 -- Usamos INSERT IGNORE para evitar erros se rodar mais de uma vez.
@@ -193,17 +241,18 @@ INSERT IGNORE INTO coworker (id_coworker, first_name, last_name, email, phone, p
 INSERT IGNORE INTO address (id_address, postal_code, street_name, number, neighborhood, city, state, type) VALUES
 (1, '13010-050', 'Rua XV de Novembro', '123', 'Centro', 'Campinas', 'SP', 'RESIDENTIAL'),
 (2, '01311-000', 'Av. Paulista', '2000', 'Bela Vista', 'São Paulo', 'SP', 'BUILDING'),
-(3, '88015-000', 'Rua Bocaiúva', '90', 'Centro', 'Florianópolis', 'SC', 'COMMERCIAL'),
-(4, '22021-001', 'Av. Atlântica', '500', 'Copacabana', 'Rio de Janeiro', 'RJ', 'RESIDENTIAL'),
-(5, '30130-000', 'Rua da Bahia', '1000', 'Centro', 'Belo Horizonte', 'MG', 'COMMERCIAL'),
-(6, '70000-000', 'Asa Norte', 'SQN 102', 'Plano Piloto', 'Brasília', 'DF', 'RESIDENTIAL');
+(3, '08710-900', 'Rua Coronel Souza Franco', '440', 'Centro', 'Mogi das Cruzes', 'SP', 'COMMERCIAL'),
+(4, '08696-320', 'Rua Antônio Sebastião Sampaio', '520', 'Jardim Alterópolis', 'Suzano', 'SP', 'RESIDENTIAL'),
+(5, '08710-500', 'Avenida Voluntário Fernando Pinheiro Franco', '1269', 'Centro', 'Mogi das Cruzes', 'SP', 'COMMERCIAL'),
+(6, '08696-325', 'Rua Conceição Helena Evangelista Lucio', '102', 'Jardim Alterópolis', 'Suzano', 'SP', 'RESIDENTIAL');
 
 INSERT IGNORE INTO client (id_client, first_name, last_name, document_number, document_type, created_at, phone, email, fk_main_address, status) VALUES
-(1, 'João', 'Silva', '12345678901', 'CPF', '2025-08-01 10:00:00', '1933233431', 'ranierd.couto@gmail.com', 1, 'ACTIVE'),
-(2, 'Maria', 'Oliveira', '12345678902', 'CPF', '2025-09-10 14:30:00', '2199865432', 'maria.oliveira@example.com', 2, 'ACTIVE'),
-(3, 'Pedro', 'Santos', '11222333000144', 'CNPJ', '2025-10-05 09:00:00', '4899123456', 'pedro.santos@example.com', 3, 'ACTIVE'),
-(4, 'Lucia', 'Ferreira', '98765432100', 'CPF', '2025-10-20 11:00:00', '21988887777', 'lucia.ferreira@example.com', 4, 'ACTIVE'),
-(5, 'Empresa Tech', 'Solar', '55666777000199', 'CNPJ', '2025-11-01 15:45:00', '3133334444', 'contato@techsolar.com', 5, 'ACTIVE');
+(1, 'Lara', 'Silva', '12345678901', 'CPF', '2025-08-01 10:00:00', '1933233431', 'lara.soares@sptech.school', 1, 'ACTIVE'),
+(2, 'Ranier', 'Dalton', '12345678902', 'CPF', '2025-09-10 14:30:00', '2199865432', 'ranier.couto@sptech.school', 2, 'ACTIVE'),
+(3, 'Bryan', 'Gomes', '11222333000144', 'CNPJ', '2025-10-05 09:00:00', '4899123456', 'bryan.grocha@sptech.school', 3, 'ACTIVE'),
+(4, 'Victor', 'Massaini', '98765432100', 'CPF', '2025-10-20 11:00:00', '21988887777', 'victor.santos047@sptech.school', 4, 'ACTIVE'),
+(5, 'Aaaron', 'Cutipa', '55666777000199', 'CNPJ', '2025-11-01 15:45:00', '3133334444', 'aaron.canaviri@sptech.school', 5, 'ACTIVE'),
+(6, 'Fabricio', 'Ernandes', '99887766554', 'CPF', '2025-11-10 08:30:00', '1199998888', 'fabricio.ernandes@sptech.school', 6, 'ACTIVE');
 
 INSERT IGNORE INTO client (first_name, last_name, phone, email, status, document_number, document_type, created_at, updated_at) VALUES
 ('João', 'da Silva', '11999999999', 'joao@gmail.com', 'ACTIVE', '12345678900', 'CPF', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -240,16 +289,75 @@ INSERT IGNORE INTO client (first_name, last_name, phone, email, status, document
 ('Igor', 'Fernandes', '31912123434', 'igor.f@email.com', 'ACTIVE', '90910120233', 'CPF', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Priscila', 'Monteiro', '41923234545', 'pri.monteiro@email.com', 'ACTIVE', '30320210144', 'CPF', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
+-- PROJECTS
 INSERT IGNORE INTO project (id_project, name, description, status, status_weight, preview_status, is_active, system_type, project_from, created_at, deadline, fk_client, fk_responsible, fk_address) VALUES
-(1, 'Residência João Silva', 'Instalação 5kWp', 'SCHEDULED_TECHNICAL_VISIT', 5, 'CLIENT_AWAITING_CONTACT', TRUE, 'ON_GRID', 'SITE_BUDGET_FORM', CURRENT_TIMESTAMP, DATE_ADD('2025-09-15', INTERVAL 30 DAY), 1, 2, 1),
-(2, 'Clínica Maria Oliveira', 'Backup Off-grid', 'INSTALLED', 10, 'SCHEDULED_INSTALLING_VISIT', TRUE, 'OFF_GRID', 'WHATSAPP_BOT', CURRENT_TIMESTAMP, DATE_ADD('2025-09-20', INTERVAL 30 DAY), 2, 3, 2),
-(3, 'Comércio Pedro Santos', 'Sistema Comercial', 'COMPLETED', 13, 'INSTALLED', TRUE, 'ON_GRID', 'INTERNAL_MANUAL_ENTRY', CURRENT_TIMESTAMP, DATE_ADD('2025-10-02', INTERVAL 30 DAY), 3, 1, 3),
-(4, 'Casa de Praia Lucia', 'Off-grid simples', 'FINAL_BUDGET', 7, 'TECHNICAL_VISIT_COMPLETED', TRUE, 'OFF_GRID', 'SITE_BUDGET_FORM', CURRENT_TIMESTAMP, DATE_ADD('2025-10-15', INTERVAL 30 DAY), 4, 4, 4),
-(5, 'Tech Solar Sede', 'Alta demanda', 'NEW', 3, NULL, TRUE, 'ON_GRID', 'INTERNAL_MANUAL_ENTRY', CURRENT_TIMESTAMP, DATE_ADD('2025-10-28', INTERVAL 30 DAY), 5, 2, 5),
-(6, 'Expansão João Silva', 'Adição de painéis', 'PRE_BUDGET', 4, 'NEW', TRUE, 'ON_GRID', 'WHATSAPP_BOT', CURRENT_TIMESTAMP, DATE_ADD('2025-11-05', INTERVAL 30 DAY), 1, 2, 1),
-(7, 'Estacionamento Shopping', 'Carport Solar', 'SCHEDULED_INSTALLING_VISIT', 6, 'AWAITING_MATERIALS', TRUE, 'ON_GRID', 'SITE_BUDGET_FORM', CURRENT_TIMESTAMP, DATE_ADD('2025-11-10', INTERVAL 30 DAY), 3, 3, 3),
-(8, 'Sítio Recanto', 'Bombeamento Solar', 'NEGOTIATION_FAILED', 12, 'FINAL_BUDGET', TRUE, 'OFF_GRID', 'WHATSAPP_BOT', CURRENT_TIMESTAMP, DATE_ADD('2025-11-12', INTERVAL 30 DAY), 2, 4, 2),
-(9, 'Condomínio Flores', 'Área comum', 'CLIENT_AWAITING_CONTACT', 1, 'PRE_BUDGET', TRUE, 'ON_GRID', 'SITE_BUDGET_FORM', CURRENT_TIMESTAMP, DATE_ADD('2025-11-20', INTERVAL 30 DAY), 4, 1, 4);
+(1, 'Residência João Silva', 'Instalação 5kWp', 'SCHEDULED_TECHNICAL_VISIT', 5, 'CLIENT_AWAITING_CONTACT', TRUE, 'ON_GRID', 'SITE_BUDGET_FORM', DATE_ADD(NOW(), INTERVAL -5 DAY), DATE_ADD('2025-09-15', INTERVAL 30 DAY), 1, 2, 1),
+(2, 'Clínica Maria Oliveira', 'Backup Off-grid', 'INSTALLED', 10, 'SCHEDULED_INSTALLING_VISIT', TRUE, 'OFF_GRID', 'WHATSAPP_BOT', DATE_ADD(NOW(), INTERVAL -60 DAY), DATE_ADD('2025-09-20', INTERVAL 30 DAY), 2, 3, 2),
+(3, 'Comércio Pedro Santos', 'Sistema Comercial', 'COMPLETED', 13, 'INSTALLED', TRUE, 'ON_GRID', 'INTERNAL_MANUAL_ENTRY', DATE_ADD(NOW(), INTERVAL -70 DAY), DATE_ADD('2025-10-02', INTERVAL 30 DAY), 3, 1, 3),
+(4, 'Casa de Praia Lucia', 'Off-grid simples', 'FINAL_BUDGET', 7, 'TECHNICAL_VISIT_COMPLETED', TRUE, 'OFF_GRID', 'SITE_BUDGET_FORM', DATE_ADD(NOW(), INTERVAL -45 DAY), DATE_ADD('2025-10-15', INTERVAL 30 DAY), 4, 4, 4),
+(5, 'Tech Solar Sede', 'Alta demanda', 'NEW', 3, NULL, TRUE, 'ON_GRID', 'INTERNAL_MANUAL_ENTRY', DATE_ADD(NOW(), INTERVAL -1 DAY), DATE_ADD('2025-10-28', INTERVAL 30 DAY), 5, 2, 5),
+(6, 'Expansão João Silva', 'Adição de painéis', 'PRE_BUDGET', 4, 'NEW', TRUE, 'ON_GRID', 'WHATSAPP_BOT', DATE_ADD(NOW(), INTERVAL -10 DAY), DATE_ADD('2025-11-05', INTERVAL 30 DAY), 1, 2, 1),
+(7, 'Estacionamento Shopping', 'Carport Solar', 'SCHEDULED_INSTALLING_VISIT', 6, 'AWAITING_MATERIALS', TRUE, 'ON_GRID', 'SITE_BUDGET_FORM', DATE_ADD(NOW(), INTERVAL -30 DAY), DATE_ADD('2025-11-10', INTERVAL 30 DAY), 3, 3, 3),
+(8, 'Sítio Recanto', 'Bombeamento Solar', 'NEGOTIATION_FAILED', 12, 'FINAL_BUDGET', TRUE, 'OFF_GRID', 'WHATSAPP_BOT', DATE_ADD(NOW(), INTERVAL -40 DAY), DATE_ADD('2025-11-12', INTERVAL 30 DAY), 2, 4, 2),
+(9, 'Condomínio Flores', 'Área comum', 'CLIENT_AWAITING_CONTACT', 1, 'PRE_BUDGET', TRUE, 'ON_GRID', 'SITE_BUDGET_FORM', DATE_ADD(NOW(), INTERVAL -2 DAY), DATE_ADD('2025-11-20', INTERVAL 30 DAY), 4, 1, 2);
+
+-- BUDGETS
+INSERT IGNORE INTO budget (id_budget, subtotal, total_cost, discount, material_cost, service_cost, created_at, discount_type, final_budget, fk_project) VALUES
+(10, 18000.00, 18000.00, 0.00, 12900.00, 0.00, DATE_ADD(NOW(), INTERVAL -3 DAY), 'AMOUNT', FALSE, 1),
+(2, 24535.10, 24000.00, 535.10, 19535.10, 5000.00, DATE_ADD(NOW(), INTERVAL -45 DAY), 'AMOUNT', TRUE, 2),
+(3, 44387.30, 43000.00, 1387.30, 36387.30, 8000.00, DATE_ADD(NOW(), INTERVAL -55 DAY), 'AMOUNT', TRUE, 3),
+(4, 18292.55, 18000.00, 292.55, 15292.55, 3000.00, DATE_ADD(NOW(), INTERVAL -30 DAY), 'AMOUNT', TRUE, 4),
+(6, 10000.00, 9500.00, 5.00, 8000.00, 2000.00, DATE_ADD(NOW(), INTERVAL -2 DAY), 'PERCENT', FALSE, 6),
+(7, 76025.50, 75000.00, 1025.50, 61025.50, 15000.00, DATE_ADD(NOW(), INTERVAL -15 DAY), 'AMOUNT', TRUE, 7),
+(8, 38270.20, 38270.20, 0.00, 32270.20, 6000.00, DATE_ADD(NOW(), INTERVAL -25 DAY), 'AMOUNT', TRUE, 8),
+(9, 15000.00, 15000.00, 0.00, 10000.00, 5000.00, DATE_ADD(NOW(), INTERVAL -1 DAY), 'AMOUNT', FALSE, 9);
+
+-- SCHEDULES
+INSERT IGNORE INTO schedule (id_schedule, title, description, start_date, end_date, type, status, is_active, fk_project, fk_coworker) VALUES
+(1, 'Visita Técnica João', 'Medição de telhado', DATE_ADD(NOW(), INTERVAL 24 HOUR), DATE_ADD(NOW(), INTERVAL 26 HOUR), 'TECHNICAL_VISIT', 'MARKED', TRUE, 1, 2),
+(2, 'Visita Técnica Maria', 'Análise de local', DATE_ADD(NOW(), INTERVAL -50 DAY), DATE_ADD(NOW(), INTERVAL -50 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 2, 3),
+(3, 'Instalação Maria', 'Instalação Off-grid', DATE_ADD(NOW(), INTERVAL -20 DAY), DATE_ADD(NOW(), INTERVAL -18 DAY), 'INSTALL_VISIT', 'FINISHED', TRUE, 2, 3),
+(4, 'Visita Técnica Pedro', 'Medição comercial', DATE_ADD(NOW(), INTERVAL -60 DAY), DATE_ADD(NOW(), INTERVAL -60 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 3, 1),
+(5, 'Instalação Pedro', 'Instalação On-grid', DATE_ADD(NOW(), INTERVAL -30 DAY), DATE_ADD(NOW(), INTERVAL -25 DAY), 'INSTALL_VISIT', 'FINISHED', TRUE, 3, 1),
+(6, 'Visita Técnica Lucia', 'Análise Off-grid', DATE_ADD(NOW(), INTERVAL -40 DAY), DATE_ADD(NOW(), INTERVAL -40 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 4, 4),
+(7, 'Visita Técnica Shopping', 'Avaliação Carport', DATE_ADD(NOW(), INTERVAL -20 DAY), DATE_ADD(NOW(), INTERVAL -20 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 7, 3),
+(8, 'Instalação Shopping', 'Montagem Carport', DATE_ADD(NOW(), INTERVAL 5 DAY), DATE_ADD(NOW(), INTERVAL 15 DAY), 'INSTALL_VISIT', 'MARKED', TRUE, 7, 3),
+(9, 'Visita Técnica Sítio', 'Medição bombeamento', DATE_ADD(NOW(), INTERVAL -30 DAY), DATE_ADD(NOW(), INTERVAL -30 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 8, 4);
+
+-- COMMENTS
+INSERT IGNORE INTO project_comment (id_project_comment, comment, created_at, fk_project, fk_coworker) VALUES
+(1, 'Visita Técnica concluída com sucesso. Local preparado para instalação off-grid.', DATE_ADD(NOW(), INTERVAL -49 DAY), 2, 3),
+(2, 'Instalação Off-grid finalizada e testada. Cliente satisfeito.', DATE_ADD(NOW(), INTERVAL -15 DAY), 2, 3),
+(3, 'Documentação de homologação enviada e aprovada pela concessionária.', DATE_ADD(NOW(), INTERVAL -5 DAY), 7, 3),
+(4, 'Visita técnica no comércio realizada. Estrutura suporta os painéis.', DATE_ADD(NOW(), INTERVAL -59 DAY), 3, 1),
+(5, 'Instalação On-grid finalizada e sistema operando.', DATE_ADD(NOW(), INTERVAL -25 DAY), 3, 1),
+(6, 'Homologação aprovada.', DATE_ADD(NOW(), INTERVAL -5 DAY), 3, 1),
+(7, 'Projeto Elétrico elaborado e aprovado.', DATE_ADD(NOW(), INTERVAL -44 DAY), 2, 3),
+(8, 'Visita técnica concluída. Cliente solicitou alteração no escopo.', DATE_ADD(NOW(), INTERVAL -38 DAY), 4, 4),
+(9, 'Estrutura metálica do estacionamento vistoriada.', DATE_ADD(NOW(), INTERVAL -19 DAY), 7, 3);
+
+-- FILES
+INSERT IGNORE INTO project_file (id_project_file, filename, original_filename, created_at, mb_size, check_sum, homologation_doc, content_type, fk_project, fk_coworker) VALUES
+(1, 'homologacao_shopping.pdf', 'Homologação Copel.pdf', DATE_ADD(NOW(), INTERVAL -5 DAY), 2, 'abc123checksum', TRUE, 'application/pdf', 7, 3),
+(2, 'homologacao_maria.pdf', 'Homologação CPFL Maria.pdf', DATE_ADD(NOW(), INTERVAL -5 DAY), 1, 'def456checksum', TRUE, 'application/pdf', 2, 3),
+(3, 'homologacao_pedro.pdf', 'Homologação Elektro Pedro.pdf', DATE_ADD(NOW(), INTERVAL -5 DAY), 3, 'ghi789checksum', TRUE, 'application/pdf', 3, 1),
+(4, 'projeto_eletrico_maria.pdf', 'Projeto Eletrico.pdf', DATE_ADD(NOW(), INTERVAL -44 DAY), 4, 'jkl012checksum', FALSE, 'application/pdf', 2, 3);
+
+-- PAYMENTS
+INSERT IGNORE INTO payment (id_payment, method, installments_count, total_amount, created_at, fk_budget) VALUES
+(1, 'PIX', 1, 24000.00, DATE_ADD(NOW(), INTERVAL -45 DAY), 2),
+(2, 'CREDIT_CARD', 3, 43000.00, DATE_ADD(NOW(), INTERVAL -55 DAY), 3),
+(3, 'FINANCING', 60, 75000.00, DATE_ADD(NOW(), INTERVAL -15 DAY), 7);
+
+-- PAYMENT INSTALLMENTS
+INSERT IGNORE INTO payment_installment (id_payment_installment, installment_number, amount, due_date, paid_at, status, fk_payment) VALUES
+(1, 1, 24000.00, DATE_ADD(NOW(), INTERVAL -40 DAY), DATE_ADD(NOW(), INTERVAL -44 DAY), 'PAID', 1),
+(2, 1, 14333.33, DATE_ADD(NOW(), INTERVAL -50 DAY), DATE_ADD(NOW(), INTERVAL -54 DAY), 'PAID', 2),
+(3, 2, 14333.33, DATE_ADD(NOW(), INTERVAL -20 DAY), DATE_ADD(NOW(), INTERVAL -19 DAY), 'PAID', 2),
+(4, 3, 14333.34, DATE_ADD(NOW(), INTERVAL 10 DAY), NULL, 'PENDING', 2),
+(5, 1, 1250.00, DATE_ADD(NOW(), INTERVAL 15 DAY), NULL, 'PENDING', 3),
+(6, 2, 1250.00, DATE_ADD(NOW(), INTERVAL 45 DAY), NULL, 'PENDING', 3),
+(7, 3, 1250.00, DATE_ADD(NOW(), INTERVAL 75 DAY), NULL, 'PENDING', 3);
 
 INSERT IGNORE INTO material (id_material, name, metric, hidden, description) VALUES
 (1, 'Painel Solar 550W (Solar Center)', 'UNIT', FALSE, 'Ficha Técnica Painel'),
@@ -276,28 +384,9 @@ INSERT IGNORE INTO coworker_project (fk_coworker, fk_project, is_responsible) VA
 (4, 4, TRUE),
 (2, 5, TRUE);
 
-INSERT IGNORE INTO schedule (id_schedule, title, description, start_date, end_date, type, status, is_active, fk_project, fk_coworker) VALUES
-(1, 'Visita Técnica João', 'Medição de telhado', DATE_ADD(NOW(), INTERVAL 24 HOUR), DATE_ADD(NOW(), INTERVAL 26 HOUR), 'TECHNICAL_VISIT', 'MARKED', TRUE, 1, 2),
-(2, 'Visita Técnica Maria', 'Análise de local', DATE_ADD(NOW(), INTERVAL -20 DAY), DATE_ADD(NOW(), INTERVAL -20 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 2, 3),
-(3, 'Instalação Maria', 'Instalação Off-grid', DATE_ADD(NOW(), INTERVAL -10 DAY), DATE_ADD(NOW(), INTERVAL -7 DAY), 'INSTALL_VISIT', 'FINISHED', TRUE, 2, 3),
-(4, 'Visita Técnica Pedro', 'Medição para sistema comercial', DATE_ADD(NOW(), INTERVAL -30 DAY), DATE_ADD(NOW(), INTERVAL -30 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 3, 1),
-(5, 'Instalação Pedro', 'Instalação On-grid', DATE_ADD(NOW(), INTERVAL -15 DAY), DATE_ADD(NOW(), INTERVAL -10 DAY), 'INSTALL_VISIT', 'FINISHED', TRUE, 3, 1),
-(6, 'Visita Técnica Lucia', 'Análise Off-grid', DATE_ADD(NOW(), INTERVAL -5 DAY), DATE_ADD(NOW(), INTERVAL -5 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 4, 4),
-(7, 'Visita Técnica Shopping', 'Avaliação de estrutura Carport', DATE_ADD(NOW(), INTERVAL -5 DAY), DATE_ADD(NOW(), INTERVAL -5 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 7, 3),
-(8, 'Instalação Shopping', 'Instalação Carport', DATE_ADD(NOW(), INTERVAL 5 DAY), DATE_ADD(NOW(), INTERVAL 15 DAY), 'INSTALL_VISIT', 'MARKED', TRUE, 7, 3),
-(9, 'Visita Técnica Sítio', 'Medição de bombeamento', DATE_ADD(NOW(), INTERVAL -12 DAY), DATE_ADD(NOW(), INTERVAL -12 DAY), 'TECHNICAL_VISIT', 'FINISHED', TRUE, 8, 4);
-
 INSERT IGNORE INTO portfolio (id_portfolio, title, description, image_path, fk_project) VALUES
 (1, 'Residência Sustentável', 'Sistema 5kWp em telhado cerâmico', '/images/portfolio/joao_v1.jpg', 1),
 (2, 'Backup Hospitalar', 'Sistema de segurança energética', '/images/portfolio/maria_clinic.jpg', 2);
-
-INSERT IGNORE INTO budget (id_budget, subtotal, total_cost, discount, material_cost, service_cost, created_at, discount_type, final_budget, fk_project) VALUES
-(2, 24535.10, 24000.00, 535.10, 19535.10, 5000.00, DATE_ADD(NOW(), INTERVAL -15 DAY), 'AMOUNT', TRUE, 2),
-(3, 44387.30, 43000.00, 1387.30, 36387.30, 8000.00, DATE_ADD(NOW(), INTERVAL -25 DAY), 'AMOUNT', TRUE, 3),
-(4, 18292.55, 18000.00, 292.55, 15292.55, 3000.00, DATE_ADD(NOW(), INTERVAL -2 DAY), 'AMOUNT', TRUE, 4),
-(6, 10000.00, 9500.00, 5.00, 8000.00, 2000.00, DATE_ADD(NOW(), INTERVAL -1 DAY), 'PERCENT', FALSE, 6),
-(7, 76025.50, 75000.00, 1025.50, 61025.50, 15000.00, DATE_ADD(NOW(), INTERVAL -3 DAY), 'AMOUNT', TRUE, 7),
-(8, 38270.20, 38270.20, 0.00, 32270.20, 6000.00, DATE_ADD(NOW(), INTERVAL -8 DAY), 'AMOUNT', TRUE, 8);
 
 INSERT IGNORE INTO budget_material (fk_budget, fk_material_url, quantity, price) VALUES
 (2, 1, 10, 900.00),

@@ -14,7 +14,7 @@ A arquitetura foi **pulverizada** em domínios independentes para facilitar a es
   - `management-system/`: Painel administrativo React.
 - **`services/bot/`**: Automação inteligente via WhatsApp (n8n + WAHA + Redis).
 - **`services/web-scrapping/`**: Job batch para atualização de preços (Mercado Livre).
-- **`services/db/`**: Camada de persistência (MySQL + Redis).
+- **`services/db/`**: Camada de persistência (MySQL OLTP e OLAP + Redis).
 - **`services/proxy/`**: Ingress Gateway (Nginx) para roteamento de tráfego.
 
 ---
@@ -48,12 +48,16 @@ Para rodar todo o ecossistema em sua máquina local via Docker Compose:
 
 A infraestrutura em produção é gerenciada via **Terraform** e dividida em domínios isolados para segurança e performance.
 
-### Estratégia de Deploy Modular
-Os deploys foram separados por domínios. Você pode aplicar mudanças em toda a infra ou em partes específicas:
+### Estratégia de Deploy Modular e Pulverização (Terraform + Scripts)
+A infraestrutura foi desenhada com uma forte separação e **pulverização** de responsabilidades:
+- **Arquivos `.tf` (Terraform):** Declaram e provisionam a infraestrutura bruta na AWS (VPCs, EC2, S3, IAM, etc).
+- **Scripts `.ps1` (PowerShell):** Orquestram o deploy de forma isolada por domínio. Eles injetam variáveis do `.env`, empacotam Lambdas, preparam templates de *user_data* e disparam o `terraform apply` apenas para o componente (module) necessário.
+
+Essa separação permite que você atualize ou recrie partes específicas da infraestrutura (como apenas o Backend ou apenas o Frontend) sem afetar o resto do ecossistema:
 
 | Script de Deploy | Domínio Afetado | Componentes |
 |------------------|-----------------|-------------|
-| `deploy-db.ps1` | **Database** | MySQL, Redis |
+| `deploy-db.ps1` | **Database** | MySQL (OLTP e OLAP), Redis |
 | `deploy-backend.ps1` | **Backend** | Monolito, Microserviços |
 | `deploy-frontend.ps1` | **Frontend** | React Apps (Management & Institucional) |
 | `deploy-inovacao.ps1` | **Inovação** | Chatbot (n8n), Webscraping |
@@ -75,7 +79,10 @@ O projeto utiliza um Data Lake em 3 camadas no S3:
 2. **Silver (Trusted)**: Dados limpos e tipados.
 3. **Gold (Refined)**: Dados prontos para BI e Analytics.
 
-**Visualização**: Um dashboard **Grafana** é provisionado automaticamente na camada de Data Lake para monitoramento de métricas e saúde do sistema.
+**Observabilidade e Analytics (Grafana)**:
+A stack de monitoramento utiliza o **Grafana** provisionado automaticamente junto com o Data Lake. Ele atende a dois propósitos principais:
+- **Observabilidade da Infraestrutura**: Conecta-se ao AWS CloudWatch para exibir dashboards de saúde, métricas de consumo de EC2, tempo de execução de Lambdas e logs em tempo real.
+- **Dashboards Analytics**: Conecta-se ao banco de dados MySQL OLAP (Data Lake Refined) para fornecer métricas e inteligência de negócios para a equipe.
 
 ---
 
@@ -86,3 +93,18 @@ Certifique-se de configurar o arquivo `.env` na raiz do projeto com as seguintes
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`: Credenciais da AWS.
 - `DB_PASSWORD`, `REDIS_PASSWORD`: Senhas de infraestrutura.
 - `EMAIL`, `EMAIL_PASSWORD`: Para notificações do backend.
+
+---
+
+## 🛠️ Diagnóstico e Caminho dos Logs (AWS)
+
+Ao acessar uma instância EC2 via **AWS Systems Manager (Session Manager)** para diagnóstico, você pode encontrar os logs de provisionamento e instalação nos seguintes caminhos:
+
+1. **Logs do Cloud-Init (`user_data`)**:
+   - `/var/log/cloud-init-output.log` e `/var/log/cloud-init.log`
+   - **O que tem lá:** Registros do primeiro boot, injeção dos scripts do Terraform e execução inicial (incluindo o início do script de setup-vm).
+2. **Logs do Setup VM (`solarway-setup-vm`)**:
+   - `/var/log/solarway-setup-vm.log` (E no log principal do `syslog`)
+   - **O que tem lá:** Logs da instalação do Docker, AWS CLI, configuração de redes Docker internas (`solarway_network` e `storage_network`) e espera por conectividade com a internet.
+3. **Logs do Setup de Aplicação (`solarway-setup`)**:
+   - Para depurar os scripts de setup finais que sobem os containers (injetados via associações de SSM, como o `setup-backend.sh` ou `setup-app.sh`), verifique os retornos de execução diretamente na console do **AWS Systems Manager > Run Command**, pois os comandos são disparados pela interface de gerência da AWS após o cloud-init e não gravam arquivos textuais soltos por padrão (exibem standard output e error na própria nuvem).

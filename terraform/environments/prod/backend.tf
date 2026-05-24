@@ -60,7 +60,7 @@ resource "aws_ssm_association" "env_backend_1" {
       templatefile("${path.module}/templates/env.backend.tmpl", {
         db_private_ip       = module.ec2_db.private_ip
         db_password         = var.db_password
-        bucket_name         = var.bucket_name
+        bucket_name         = module.s3_trusted.bucket_id
         email               = var.email
         email_password      = var.email_password
         bot_secret          = var.bot_secret
@@ -104,7 +104,7 @@ resource "aws_ssm_association" "env_backend_2" {
       templatefile("${path.module}/templates/env.backend.tmpl", {
         db_private_ip       = module.ec2_db.private_ip
         db_password         = var.db_password
-        bucket_name         = var.bucket_name
+        bucket_name         = module.s3_trusted.bucket_id
         email               = var.email
         email_password      = var.email_password
         bot_secret          = var.bot_secret

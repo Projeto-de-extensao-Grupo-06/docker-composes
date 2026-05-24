@@ -25,12 +25,12 @@ Write-Host "Inicializando a base da infraestrutura (Redes e Bancos)..." -Foregro
 Set-Location services/db
 docker-compose --env-file ../../.env up -d
 
-Write-Host "Aguardando MySQL (Monolito) ficar pronto (TCP 3306)..." -ForegroundColor Yellow
+Write-Host "Aguardando MySQL (Monolito) ficar pronto..." -ForegroundColor Yellow
 $maxRetries = 60   # 180s max
 $retries = 0
 do {
     $rootPass = if ($env:MYSQL_ROOT_PASSWORD) { $env:MYSQL_ROOT_PASSWORD } else { "06241234" }
-    $result = docker exec mysql-db-oltp mysqladmin -u root -p$rootPass -h 127.0.0.1 ping 2>&1
+    $result = docker exec mysql-db-oltp mysqladmin -u root -p$rootPass -h 127.0.0.1 ping 2>$null
     if ($result -match "mysqld is alive") {
         Write-Host "  MySQL (Monolito) pronto!" -ForegroundColor Green
         break
@@ -44,12 +44,12 @@ Write-Host "Inicializando a base do Microserviço (DB e Broker)..." -ForegroundC
 Set-Location ../backend/microservice
 docker-compose --env-file ../../../.env up -d microservice-db microservice-broker
 
-Write-Host "Aguardando MySQL (Microservico) ficar pronto (TCP 3306)..." -ForegroundColor Yellow
+Write-Host "Aguardando MySQL (Microservico) ficar pronto..." -ForegroundColor Yellow
 $retries = 0
 do {
     # Microservice DB usa root password do .env (DB_PASSWORD)
     $microPass = if ($env:DB_PASSWORD) { $env:DB_PASSWORD } else { "06241234" }
-    $result = docker exec microservice-db mysqladmin -u root -p$microPass -h 127.0.0.1 ping 2>&1
+    $result = docker exec microservice-db mysqladmin -u root -p$microPass -h 127.0.0.1 ping 2>$null
     if ($result -match "mysqld is alive") {
         Write-Host "  MySQL (Microservico) pronto!" -ForegroundColor Green
         break

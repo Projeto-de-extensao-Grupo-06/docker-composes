@@ -21,9 +21,7 @@ AWS_ACCESS_KEY_ID
 AWS_KEY_NAME
 AWS_SECRET_ACCESS_KEY
 AWS_SESSION_TOKEN
-BACKEND_BASE_URL
 BOT_SECRET
-BUCKET_NAME
 DB_PASSWORD
 DB_USERNAME
 EMAIL
@@ -41,7 +39,6 @@ PORT_MICROSERVICE_DB
 PORT_MYSQL
 PORT_REDIS
 PORT_WAHA
-VITE_BACKEND_BASE_URL
 ```
 
 **Total: 25 variáveis**
@@ -83,11 +80,7 @@ VITE_BACKEND_BASE_URL
 - `.env.example` usa: `PASSWORD_EMAIL`
 - Padrão recomendado: `EMAIL_PASSWORD` (mais legível)
 
-#### Problema 2: `VITE_BACKEND_BASE_URL` (específica de framework)
-- Usada apenas pelo frontend
-- Nome técnico correto, mas poderia ser documentada
-
-#### Problema 3: `DB_PASSWORD` vs senhas específicas
+#### Problema 2: `DB_PASSWORD` vs senhas específicas
 - MySQL usa: `DB_PASSWORD`
 - Redis usa: `REDIS_PASSWORD` (faltante no .env.example)
 - Inconsistência no padrão de nomes
@@ -106,9 +99,6 @@ VITE_BACKEND_BASE_URL
 | PASSWORD_EMAIL | ✅ | | | | | |
 | GITHUB_* | ✅ | ✅ | ✅ | ✅ | | |
 | AWS_* | ✅ | | | | | |
-| BUCKET_NAME | ✅ | | | | | |
-| BACKEND_BASE_URL | | | | ✅ | | |
-| VITE_BACKEND_BASE_URL | | | | ✅ | | |
 | PORT_* | ✅ | ✅ | ✅ | ✅ | ✅ | |
 | MAIL_* | | ✅ | | | | |
 
@@ -221,7 +211,7 @@ grep -E '^[A-Z_]+=' .env.example | cut -d'=' -f1 | sort
 
 ### Referências Cruzadas
 
-- `services/backend/monolith/docker-compose.yml`: Usa `DB_USERNAME`, `DB_PASSWORD`, `BOT_SECRET`, `EMAIL`, `PASSWORD_EMAIL`, `BUCKET_NAME`, `AWS_*`
+- `services/backend/monolith/docker-compose.yml`: Usa `DB_USERNAME`, `DB_PASSWORD`, `BOT_SECRET`, `EMAIL`, `EMAIL_PASSWORD`, `AWS_*`
 - `services/db/docker-compose.yml`: Usa `DB_USERNAME`, `DB_PASSWORD`, `PORT_MYSQL`, `PORT_REDIS`, `MYSQL_ROOT_PASSWORD`
 - `services/bot/docker-compose.yml`: Usa múltiplas variáveis não documentadas
 - `services/web-scrapping/docker-compose.yml`: Usa `DB_USERNAME`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME`

@@ -9,6 +9,11 @@ Os dados fluem através de três camadas principais, representadas por buckets S
 - **Trusted (Confiável):** `solarway-datalake-trusted`. Onde os dados passam por limpeza, tipagem e padronização.
 - **Refined (Refinado):** `solarway-datalake-refined`. Onde os dados são enriquecidos e modelados para consumo final (Business Intelligence).
 
+> [!NOTE]
+> **Provisionamento de Buckets:**
+> Todos os buckets S3 são provisionados dinamicamente via Terraform (`datalake.tf`), concatenando um sufixo (Account ID da AWS) para garantir nomes globalmente únicos.
+> Portanto, a variável de ambiente `BUCKET_NAME` anteriormente configurada no arquivo `.env` foi declarada **obsoleta/inútil**, pois os serviços interagem com os recursos consumindo dados propagados internamente ou passados por injeção na AWS diretamente pelas configurações do Terraform (sem depender de configuração estática).
+
 ---
 
 ## Decisões Arquiteturais e Open Questions
@@ -31,10 +36,11 @@ O processamento dos dados entre as camadas do Data Lake (Raw -> Trusted -> Refin
 
 ---
 
-## Integração CI/CD (Lambdas)
+## Integração CI/CD e Nuances de Deploy
 
-O deploy das funções Lambdas é automatizado. Elas consomem os pacotes `.zip` diretamente do repositório `data-analysis` no GitHub Releases:
-- `raw_to_refined.zip` (traduzido funcionalmente para ingestão inicial / movimentação para a camada trusted na arquitetura de bucket).
-- `trusted_to_refined.zip` (movimentação final para consumo).
+O processo de deploy deste domínio (`deploy-datalake.ps1`) possui orquestrações avançadas:
 
-O Terraform provisiona essas funções atrelando a `LabRole` existente para garantir as permissões necessárias.
+1. **Download de Lambdas (ZIP):** Antes do Terraform agir, o script PowerShell se conecta ao GitHub Releases do repositório remoto (`data-analysis`) e faz o pré-download dos pacotes `.zip` das Lambdas (ex: `raw_to_trusted.zip` e `trusted_to_refined.zip`) para a pasta oculta `.terraform/lambda_zips`. O Terraform entra em ação em seguida, fazendo o upload desses arquivos para o S3 e os anexando às funções Lambda.
+2. **Grafana Dashboards (JSON):** Para provisionar os dashboards analíticos do Grafana de forma automatizada, os arquivos locais `.json` (presentes em `services/grafana/provisioning/dashboards/`) são inseridos no bucket S3 (Raw) pelo Terraform. Quando a EC2 do Grafana é inicializada, o script de associação do SSM faz um `aws s3 cp` desses arquivos do S3 diretamente para o volume interno da instância antes de o container subir, garantindo que a visualização seja provisionada na última versão de forma idempotente.
+
+O Terraform provisiona essas funções e acessos atrelando a `LabRole` para garantir as permissões de IAM necessárias.

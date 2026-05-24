@@ -24,6 +24,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 .terraform.lock.hcl
+scratch/
 
 docker-compose.override.yml
 *.tfplan

@@ -47,12 +47,6 @@ variable "email_password" {
   sensitive   = true
 }
 
-variable "bucket_name" {
-  description = "Nome do bucket S3 principal"
-  type        = string
-  default     = "solarway-datalake-trusted"
-}
-
 variable "github_username" {
   description = "Username do GitHub para pull de imagens privadas (ghcr.io)"
   type        = string
