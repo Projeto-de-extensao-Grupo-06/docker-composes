@@ -33,14 +33,17 @@ $TF_VARS = @{
 
 $varArgs = $TF_VARS.GetEnumerator() | ForEach-Object { "-var=`"$($_.Key)=$($_.Value)`"" }
 
-# -- Validação local dos ZIPs das Lambdas --------------------------------------
+# -- Download dos ZIPs das Lambdas do GitHub Releases --------------------------
 $TerraformDir  = Join-Path $PSScriptRoot ".."
 $LambdaZipsDir = Join-Path $TerraformDir ".terraform\lambda_zips"
+$ReleaseOwner  = if ($envVars.ContainsKey("GITHUB_RELEASE_OWNER")) { $envVars["GITHUB_RELEASE_OWNER"] } else { "victorsantos41" }
+$ReleaseRepo   = if ($envVars.ContainsKey("GITHUB_RELEASE_REPO")) { $envVars["GITHUB_RELEASE_REPO"] } else { "data-analysis" }
+$GhBase        = "https://github.com/$ReleaseOwner/$ReleaseRepo/releases/download/latest"
 if (-not (Test-Path $LambdaZipsDir)) {
     New-Item -ItemType Directory -Force -Path $LambdaZipsDir | Out-Null
 }
 
-Write-Host "[DEPLOY - DATALAKE] Validando Lambda ZIPs locais..." -ForegroundColor Cyan
+Write-Host "[DEPLOY - DATALAKE] Baixando Lambda ZIPs do GitHub Releases..." -ForegroundColor Cyan
 foreach ($zip in @(
     "raw_to_trusted.zip",
     "trusted_to_refined.zip",
@@ -49,10 +52,11 @@ foreach ($zip in @(
 )) {
     $dest = Join-Path $LambdaZipsDir $zip
     Write-Host "  -> $zip" -ForegroundColor Gray
+    Invoke-WebRequest -Uri "$GhBase/$zip" -OutFile $dest -UseBasicParsing
     if (-not (Test-Path $dest) -or (Get-Item $dest).Length -eq 0) {
-        throw "Arquivo ausente ou vazio: $dest"
+        throw "Falha ao baixar $zip de $GhBase/$zip"
     }
-    Write-Host "  OK: $('{0:N1}' -f ((Get-Item $dest).Length / 1MB)) MB encontrados." -ForegroundColor Green
+    Write-Host "  OK: $('{0:N1}' -f ((Get-Item $dest).Length / 1MB)) MB baixados." -ForegroundColor Green
 }
 
 # -- Terraform -----------------------------------------------------------------
