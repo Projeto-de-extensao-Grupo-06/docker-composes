@@ -28,7 +28,7 @@ module "s3_backup" {
   source = "../../modules/s3"
 
   environment = "prod"
-  bucket_name = "solarway-backup-123123213123523412"
+  bucket_name = "solarway-backup"
 }
 
 resource "aws_vpc_endpoint" "s3" {

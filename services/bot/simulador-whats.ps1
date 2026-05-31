@@ -1,14 +1,14 @@
 param(
     [string]$Numero = "5511949902159",
     [string]$Nome = "Ranier",
-    [string]$Mensagem = "Oi, sou Ranier e quero realizar um pré orçamento com vocês da Solarway",
+    [string]$Mensagem = "O CEP é 05158430, tenta buscar novamente. A conta média é 400, não 800",
     [boolean]$Producao = $true,
-    [string]$WEBHOOK = "http://3.239.44.242:5678/webhook-test/webhook",
+    [string]$WEBHOOK = "http://100.54.46.122:5678/webhook/webhook-test/webhook",
     [boolean]$UseTestWebhook = $true
 )
 
 # Resolve o URL com base no ambiente (Local vs Produção) e tipo (Test vs Ativo)
-$BaseUrl = if ($Producao) { "http://3.239.44.242:5678" } else { "http://localhost:5678" }
+$BaseUrl = if ($Producao) { "http://100.54.46.122:5678" } else { "http://localhost:5678" }
 $WebhookType = if ($UseTestWebhook) { "webhook-test" } else { "webhook" }
 
 $Url = if ($PSBoundParameters.ContainsKey('WEBHOOK')) {

@@ -63,6 +63,7 @@ resource "aws_ssm_association" "env_backend_1" {
         bucket_name         = module.s3_trusted.bucket_id
         email               = var.email
         email_password      = var.email_password
+        redis_password      = var.redis_password
         bot_secret          = var.bot_secret
         github_username     = var.github_username
         github_access_token = var.github_token
@@ -107,6 +108,7 @@ resource "aws_ssm_association" "env_backend_2" {
         bucket_name         = module.s3_trusted.bucket_id
         email               = var.email
         email_password      = var.email_password
+        redis_password      = var.redis_password
         bot_secret          = var.bot_secret
         github_username     = var.github_username
         github_access_token = var.github_token
