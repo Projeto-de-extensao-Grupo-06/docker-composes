@@ -107,6 +107,13 @@ resource "aws_s3_object" "lambda_socioeconomic_to_scoring_zip" {
   etag   = filemd5("${local.lambda_zips_dir}/socioeconomic_to_scoring.zip")
 }
 
+resource "aws_s3_object" "lambda_scoring_to_olap_zip" {
+  bucket = aws_s3_bucket.datalake["raw"].id
+  key    = "lambdas/scoring_to_olap.zip"
+  source = "${local.lambda_zips_dir}/scoring_to_olap.zip"
+  etag   = filemd5("${local.lambda_zips_dir}/scoring_to_olap.zip")
+}
+
 resource "aws_s3_object" "dash_ec2" {
   bucket = aws_s3_bucket.datalake["raw"].id
   key    = "dashboards/aws_ec2.json"
@@ -197,6 +204,29 @@ resource "aws_lambda_function" "socioeconomic_to_scoring" {
   }
 }
 
+resource "aws_lambda_function" "scoring_to_olap" {
+  depends_on       = [aws_s3_object.lambda_scoring_to_olap_zip]
+  function_name    = "solarway-socioeconomic-to-scoring"
+  handler          = "scoring_to_olap.lambda_handler"
+  runtime          = "python3.12"
+  role             = data.aws_iam_role.lab_role.arn
+  s3_bucket        = aws_s3_bucket.datalake["raw"].id
+  s3_key           = aws_s3_object.lambda_scoring_to_olap_zip.key
+  source_code_hash = filebase64sha256("${local.lambda_zips_dir}/scoring_to_olap.zip")
+
+  environment {
+    variables = {
+      SCORING_BUCKET = aws_s3_bucket.datalake["scoring"].id
+
+      DB_HOST     = module.ec2_db.private_ip
+      DB_PORT     = "3308"
+      DB_NAME     = "solarway"
+      DB_USER     = var.db_username
+      DB_PASSWORD = var.db_password
+    }
+  }
+}
+
 # -- Gatilhos S3 -> Lambda -------------------------------------------------------
 
 # Permissão para o S3 invocar a Lambda raw_to_trusted
@@ -231,6 +261,14 @@ resource "aws_lambda_permission" "allow_s3_socioeconomic" {
   function_name = aws_lambda_function.socioeconomic_to_scoring.function_name
   principal     = "s3.amazonaws.com"
   source_arn    = aws_s3_bucket.datalake["socioeconomic"].arn
+}
+
+resource "aws_lambda_permission" "allow_s3_scoring" {
+  statement_id  = "AllowS3Scoring"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.scoring_to_olap.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.datalake["scoring"].arn
 }
 
 # Gatilho: upload no bucket RAW -> dispara raw_to_trusted
@@ -271,6 +309,16 @@ resource "aws_s3_bucket_notification" "socioeconomic_trigger" {
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.socioeconomic_to_scoring.arn
+    events              = ["s3:ObjectCreated:*"]
+  }
+}
+
+resource "aws_s3_bucket_notification" "scoring_trigger" {
+  depends_on = [aws_lambda_permission.allow_s3_scoring]
+  bucket     = aws_s3_bucket.datalake["scoring"].id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.scoring_to_olap.arn
     events              = ["s3:ObjectCreated:*"]
   }
 }
