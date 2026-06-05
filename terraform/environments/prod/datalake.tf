@@ -132,7 +132,7 @@ resource "aws_s3_object" "dash_billing" {
 resource "aws_lambda_function" "raw_to_trusted" {
   depends_on       = [aws_s3_object.lambda_raw_to_trusted_zip]
   function_name    = "solarway-raw-to-trusted"
-  handler          = "solarway_raw_to_trusted.lambda_handler"
+  handler          = "raw_to_trusted.lambda_handler"
   runtime          = "python3.12"
   role             = data.aws_iam_role.lab_role.arn
   s3_bucket        = aws_s3_bucket.datalake["raw"].id
@@ -142,7 +142,6 @@ resource "aws_lambda_function" "raw_to_trusted" {
   environment {
     variables = {
       TRUSTED_BUCKET = aws_s3_bucket.datalake["trusted"].id
-      TRUSTED_PREFIX = "incoming/"
     }
   }
 }
@@ -150,7 +149,7 @@ resource "aws_lambda_function" "raw_to_trusted" {
 resource "aws_lambda_function" "trusted_to_refined" {
   depends_on       = [aws_s3_object.lambda_trusted_to_refined_zip]
   function_name    = "solarway-trusted-to-refined"
-  handler          = "solarway_trusted_to_refined.lambda_handler"
+  handler          = "trusted_to_refined.lambda_handler"
   runtime          = "python3.12"
   role             = data.aws_iam_role.lab_role.arn
   s3_bucket        = aws_s3_bucket.datalake["raw"].id
@@ -160,7 +159,6 @@ resource "aws_lambda_function" "trusted_to_refined" {
   environment {
     variables = {
       REFINED_BUCKET = aws_s3_bucket.datalake["refined"].id
-      REFINED_PREFIX = "incoming/"
     }
   }
 }
@@ -168,7 +166,7 @@ resource "aws_lambda_function" "trusted_to_refined" {
 resource "aws_lambda_function" "refined_to_socioeconomic" {
   depends_on       = [aws_s3_object.lambda_refined_to_socioeconomic_zip]
   function_name    = "solarway-refined-to-socioeconomic"
-  handler          = "solarway_refined_to_socioeconomic.lambda_handler"
+  handler          = "refined_to_socioeconomic.lambda_handler"
   runtime          = "python3.12"
   role             = data.aws_iam_role.lab_role.arn
   s3_bucket        = aws_s3_bucket.datalake["raw"].id
@@ -178,7 +176,6 @@ resource "aws_lambda_function" "refined_to_socioeconomic" {
   environment {
     variables = {
       SOCIOECONOMIC_BUCKET = aws_s3_bucket.datalake["socioeconomic"].id
-      SOCIOECONOMIC_PREFIX = "incoming/"
     }
   }
 }
@@ -186,7 +183,7 @@ resource "aws_lambda_function" "refined_to_socioeconomic" {
 resource "aws_lambda_function" "socioeconomic_to_scoring" {
   depends_on       = [aws_s3_object.lambda_socioeconomic_to_scoring_zip]
   function_name    = "solarway-socioeconomic-to-scoring"
-  handler          = "solarway_socioeconomic_to_scoring.lambda_handler"
+  handler          = "socioeconomic_to_scoring.lambda_handler"
   runtime          = "python3.12"
   role             = data.aws_iam_role.lab_role.arn
   s3_bucket        = aws_s3_bucket.datalake["raw"].id
@@ -196,7 +193,6 @@ resource "aws_lambda_function" "socioeconomic_to_scoring" {
   environment {
     variables = {
       SCORING_BUCKET = aws_s3_bucket.datalake["scoring"].id
-      SCORING_PREFIX = "incoming/"
     }
   }
 }
@@ -245,7 +241,6 @@ resource "aws_s3_bucket_notification" "raw_trigger" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.raw_to_trusted.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "incoming/"
   }
 }
 
@@ -257,7 +252,6 @@ resource "aws_s3_bucket_notification" "trusted_trigger" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.trusted_to_refined.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "incoming/"
   }
 }
 
@@ -268,7 +262,6 @@ resource "aws_s3_bucket_notification" "refined_trigger" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.refined_to_socioeconomic.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "incoming/"
   }
 }
 
@@ -279,7 +272,6 @@ resource "aws_s3_bucket_notification" "socioeconomic_trigger" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.socioeconomic_to_scoring.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "incoming/"
   }
 }
 
