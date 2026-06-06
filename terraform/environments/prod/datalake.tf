@@ -206,13 +206,25 @@ resource "aws_lambda_function" "socioeconomic_to_scoring" {
 
 resource "aws_lambda_function" "scoring_to_olap" {
   depends_on       = [aws_s3_object.lambda_scoring_to_olap_zip]
-  function_name    = "solarway-socioeconomic-to-scoring"
+  function_name    = "solarway-scoring-to-olap"
   handler          = "scoring_to_olap.lambda_handler"
   runtime          = "python3.12"
   role             = data.aws_iam_role.lab_role.arn
   s3_bucket        = aws_s3_bucket.datalake["raw"].id
   s3_key           = aws_s3_object.lambda_scoring_to_olap_zip.key
   source_code_hash = filebase64sha256("${local.lambda_zips_dir}/scoring_to_olap.zip")
+  timeout          = 60
+  memory_size = 512
+
+  vpc_config {
+    subnet_ids = [
+      module.vpc_prod.private_subnet_ids[3]
+    ]
+
+    security_group_ids = [
+      aws_security_group.lambda_scoring_to_olap.id
+    ]
+  }
 
   environment {
     variables = {
@@ -269,6 +281,17 @@ resource "aws_lambda_permission" "allow_s3_scoring" {
   function_name = aws_lambda_function.scoring_to_olap.function_name
   principal     = "s3.amazonaws.com"
   source_arn    = aws_s3_bucket.datalake["scoring"].arn
+}
+
+resource "aws_security_group" "lambda_scoring_to_olap" {
+  vpc_id = module.vpc_prod.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 # Gatilho: upload no bucket RAW -> dispara raw_to_trusted
