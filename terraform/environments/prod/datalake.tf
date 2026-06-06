@@ -284,7 +284,13 @@ resource "aws_lambda_permission" "allow_s3_scoring" {
 }
 
 resource "aws_security_group" "lambda_scoring_to_olap" {
+  name        = "solarway-lambda-scoring-to-olap-sg"
+  description = "SG para Lambda scoring_to_olap acessar MySQL OLAP"
   vpc_id = module.vpc_prod.vpc_id
+
+    lifecycle {
+    create_before_destroy = true
+  }
 
   egress {
     from_port   = 0
