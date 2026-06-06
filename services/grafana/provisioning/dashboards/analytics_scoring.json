@@ -1,0 +1,608 @@
+{
+  "__inputs": [],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "mysql",
+      "name": "MySQL",
+      "version": "1.0.0"
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.3.1"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "barchart",
+      "name": "Bar chart",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Dashboard analitica executiva do scoring SolarWay consumindo o MySQL OLAP.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-olap-prod"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "dataset": "solarway",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-olap-prod"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT total_regions AS value FROM scoring_run WHERE id_run = ${run_id};",
+          "refId": "A"
+        }
+      ],
+      "title": "Total de Regioes",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-olap-prod"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "dataset": "solarway",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-olap-prod"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT city AS value FROM fact_scoring_city WHERE fk_run = ${run_id} ORDER BY lead_rank ASC LIMIT 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "Melhor Cidade",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-olap-prod"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 40
+              },
+              {
+                "color": "green",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "dataset": "solarway",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-olap-prod"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT MAX(solar_lead_score) AS value FROM fact_scoring_city WHERE fk_run = ${run_id} AND state LIKE '${state}' AND city LIKE '${city}';",
+          "refId": "A"
+        }
+      ],
+      "title": "Melhor Score",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-olap-prod"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "dataset": "solarway",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-olap-prod"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT DATE_FORMAT(generated_at, '%Y-%m-%d %H:%i:%s') AS value FROM scoring_run WHERE id_run = ${run_id};",
+          "refId": "A"
+        }
+      ],
+      "title": "Gerado Em",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-olap-prod"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "id": 5,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "dataset": "solarway",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-olap-prod"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT lead_rank AS Ranking, state AS Estado, city AS Cidade, lead_priority AS Prioridade, annual_avg AS Irradiacao_Anual, solar_lead_score AS Score_Lead FROM fact_scoring_city WHERE fk_run = ${run_id} AND state LIKE '${state}' AND city LIKE '${city}' ORDER BY lead_rank ASC;",
+          "refId": "A"
+        }
+      ],
+      "title": "Ranking de Cidades",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-olap-prod"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "displayMode": "hidden",
+          "placement": "bottom"
+        },
+        "orientation": "horizontal",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "Prioridade",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "dataset": "solarway",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-olap-prod"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT lead_priority AS Prioridade, COUNT(*) AS Total FROM fact_scoring_city WHERE fk_run = ${run_id} AND state LIKE '${state}' AND city LIKE '${city}' GROUP BY lead_priority ORDER BY FIELD(lead_priority, 'alta', 'media_alta', 'media', 'media_baixa', 'baixa');",
+          "refId": "A"
+        }
+      ],
+      "title": "Distribuicao por Prioridade",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-olap-prod"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "displayMode": "hidden",
+          "placement": "bottom"
+        },
+        "orientation": "horizontal",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "Cidade",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "dataset": "solarway",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-olap-prod"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT city AS Cidade, solar_lead_score AS Score FROM fact_scoring_city WHERE fk_run = ${run_id} AND state LIKE '${state}' AND city LIKE '${city}' ORDER BY solar_lead_score DESC LIMIT 10;",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Cidades por Score",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "mysql",
+        "uid": "mysql-olap-prod"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.3.1",
+      "targets": [
+        {
+          "dataset": "solarway",
+          "datasource": {
+            "type": "mysql",
+            "uid": "mysql-olap-prod"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT state AS Estado, city AS Cidade, annual_avg AS Irradiacao_Anual, solar_score AS Score_Solar, solar_lead_score AS Score_Lead, lead_priority AS Prioridade, lead_rank AS Ranking FROM fact_scoring_city WHERE fk_run = ${run_id} AND state LIKE '${state}' AND city LIKE '${city}' ORDER BY lead_rank ASC;",
+          "refId": "A"
+        }
+      ],
+      "title": "Tabela Analitica",
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 40,
+  "tags": [
+    "analytics",
+    "scoring",
+    "solarway"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "mysql",
+          "uid": "mysql-olap-prod"
+        },
+        "definition": "SELECT DATE_FORMAT(generated_at, '%Y-%m-%d %H:%i:%s') AS __text, id_run AS __value FROM scoring_run ORDER BY generated_at DESC;",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Execucao",
+        "multi": false,
+        "name": "run_id",
+        "options": [],
+        "query": "SELECT DATE_FORMAT(generated_at, '%Y-%m-%d %H:%i:%s') AS __text, id_run AS __value FROM scoring_run ORDER BY generated_at DESC;",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "Todos",
+          "value": "%"
+        },
+        "datasource": {
+          "type": "mysql",
+          "uid": "mysql-olap-prod"
+        },
+        "definition": "SELECT DISTINCT state AS __text, state AS __value FROM fact_scoring_city WHERE fk_run = ${run_id} ORDER BY state;",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "%",
+        "label": "Estado",
+        "multi": false,
+        "name": "state",
+        "options": [],
+        "query": "SELECT DISTINCT state AS __text, state AS __value FROM fact_scoring_city WHERE fk_run = ${run_id} ORDER BY state;",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "Todos",
+          "value": "%"
+        },
+        "datasource": {
+          "type": "mysql",
+          "uid": "mysql-olap-prod"
+        },
+        "definition": "SELECT DISTINCT city AS __text, city AS __value FROM fact_scoring_city WHERE fk_run = ${run_id} AND state LIKE '${state}' ORDER BY city;",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "%",
+        "label": "Cidade",
+        "multi": false,
+        "name": "city",
+        "options": [],
+        "query": "SELECT DISTINCT city AS __text, city AS __value FROM fact_scoring_city WHERE fk_run = ${run_id} AND state LIKE '${state}' ORDER BY city;",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "SolarWay Analytics - Scoring Executivo",
+  "uid": "solarway-analytics-scoring",
+  "version": 1,
+  "weekStart": ""
+}
