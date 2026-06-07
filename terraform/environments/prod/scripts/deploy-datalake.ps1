@@ -48,7 +48,8 @@ foreach ($zip in @(
     "raw_to_trusted.zip",
     "trusted_to_refined.zip",
     "refined_to_socioeconomic.zip",
-    "socioeconomic_to_scoring.zip"
+    "socioeconomic_to_scoring.zip",
+    "scoring_to_olap.zip"
 )) {
     $dest = Join-Path $LambdaZipsDir $zip
     Write-Host "  -> $zip" -ForegroundColor Gray
