@@ -388,7 +388,8 @@ resource "aws_ssm_association" "env_grafana" {
     module.ec2_grafana,
     aws_s3_object.dash_ec2,
     aws_s3_object.dash_lambda,
-    aws_s3_object.dash_billing
+    aws_s3_object.dash_billing,
+    aws_s3_object.dash_analytics
   ]
 
   name = "AWS-RunShellScript"
