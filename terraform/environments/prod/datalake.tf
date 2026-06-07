@@ -135,6 +135,13 @@ resource "aws_s3_object" "dash_billing" {
   etag   = filemd5("../../../services/grafana/provisioning/dashboards/aws_billing.json")
 }
 
+resource "aws_s3_object" "dash_analytics" {
+  bucket = aws_s3_bucket.datalake["raw"].id
+  key    = "dashboards/analytics_scoring.json"
+  source = "../../../services/grafana/provisioning/dashboards/analytics_scoring.json"
+  etag   = filemd5("../../../services/grafana/provisioning/dashboards/analytics_scoring.json")
+}
+
 # Funções Lambda
 resource "aws_lambda_function" "raw_to_trusted" {
   depends_on       = [aws_s3_object.lambda_raw_to_trusted_zip]
