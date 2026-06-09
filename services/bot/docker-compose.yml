@@ -37,23 +37,24 @@ services:
     image: n8nio/n8n:latest
     container_name: bot-n8n
     platform: linux/amd64
+    env_file:
+      - ../../.env
     environment:
-      N8N_USER_MANAGEMENT_DISABLED: "true"
-      BACKEND_API_URL: "${BACKEND_API_URL:-http://backend-service:8000}"
-      WAHA_API_URL: "${WAHA_API_URL:-http://bot-waha:3000}"
-      N8N_PROTOCOL: "${N8N_PROTOCOL:-http}"
-      N8N_HOST: "${N8N_HOST:-localhost}"
-      N8N_PORT: "${PORT_N8N:-5678}"
-      N8N_PATH: "/"
-      N8N_BASE_URL: "${N8N_BASE_URL:-http://localhost:5678/}"
-      WEBHOOK_URL: "${N8N_WEBHOOK_URL:-http://localhost:5678/}"
-      GENERIC_TIMEZONE: America/Sao_Paulo
-      N8N_LOG_LEVEL: debug
-      N8N_SECURE_COOKIE: false
-      N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE: true
-      BOT_SECRET: "${BOT_SECRET}"
-      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
-      N8N_EXPRESSIONS_ALLOWED_ENV_VARS: "BACKEND_API_URL,BOT_SECRET"
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-solarway_secret_key_change_me}
+      - N8N_USER_MANAGEMENT_DISABLED=true
+      - BACKEND_API_URL=${BACKEND_API_URL:-http://backend-service:8000}
+      - WAHA_API_URL=${WAHA_API_URL:-http://bot-waha:3000}
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=${PORT_N8N:-5678}
+      - N8N_BASE_URL=${N8N_BASE_URL:-http://localhost:5678/}
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - N8N_LOG_LEVEL=debug
+      - N8N_SECURE_COOKIE=false
+      - BOT_SECRET=${BOT_SECRET}
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_EXPRESSIONS_ALLOWED_ENV_VARS=BACKEND_API_URL,BOT_SECRET,DOMAIN
     volumes:
       - n8n_data:/home/node/.n8n
     ports:
