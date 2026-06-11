@@ -50,14 +50,22 @@ $varArgs = $TF_VARS.GetEnumerator() | ForEach-Object {
 # -- Pré-download dos ZIPs das Lambdas do GitHub Releases ---------------------
 $TerraformDir  = Join-Path $PSScriptRoot ".."
 $LambdaZipsDir = Join-Path $TerraformDir ".terraform\lambda_zips"
-$GhBase        = "https://github.com/Projeto-de-extensao-Grupo-06/data-analysis/releases/download/latest"
+$ReleaseOwner  = if ($envVars.ContainsKey("GITHUB_RELEASE_OWNER")) { $envVars["GITHUB_RELEASE_OWNER"] } else { "victorsantos41" }
+$ReleaseRepo   = if ($envVars.ContainsKey("GITHUB_RELEASE_REPO")) { $envVars["GITHUB_RELEASE_REPO"] } else { "data-analysis" }
+$GhBase        = "https://github.com/$ReleaseOwner/$ReleaseRepo/releases/download/latest"
 
 if (-not (Test-Path $LambdaZipsDir)) {
     New-Item -ItemType Directory -Force -Path $LambdaZipsDir | Out-Null
 }
 
 Write-Host "[DEPLOY - PROD] Baixando Lambda ZIPs do GitHub Releases..." -ForegroundColor Cyan
-foreach ($zip in @("raw_to_trusted.zip", "trusted_to_refined.zip")) {
+foreach ($zip in @(
+    "raw_to_trusted.zip",
+    "trusted_to_refined.zip",
+    "refined_to_socioeconomic.zip",
+    "socioeconomic_to_scoring.zip",
+    "scoring_to_olap.zip"
+)) {
     $dest = Join-Path $LambdaZipsDir $zip
     if (Test-Path $dest) {
         Write-Host "  -> $zip ja existe, pulando download." -ForegroundColor Yellow

@@ -74,4 +74,9 @@ if ! nc -z localhost 6379; then
   exit 1
 fi
 
+if ! nc -z localhost 3308; then
+  echo "âŒ OLAP nao responde"
+  exit 1
+fi
+
 echo "Database healthcheck OK"

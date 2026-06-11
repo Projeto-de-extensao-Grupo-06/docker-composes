@@ -6,7 +6,18 @@ services:
     container_name: redis-multidb
     ports:
       - "${PORT_REDIS:-6379}:6379"
-    command: [ "redis-server", "--databases", "3", "--save", "", "--appendonly", "no", "--maxmemory-policy", "allkeys-lru" ]
+    command:
+      [
+        "redis-server",
+        "--databases",
+        "3",
+        "--save",
+        "",
+        "--appendonly",
+        "no",
+        "--maxmemory-policy",
+        "allkeys-lru",
+      ]
     restart: unless-stopped
     networks:
       - storage_network
@@ -28,7 +39,17 @@ services:
     networks:
       - storage_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-${DB_PASSWORD}}"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-${DB_PASSWORD}}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -44,7 +65,7 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${PORT_MYSQL_OLAP:-3308}:3308"
+      - "${PORT_MYSQL_OLAP:-3308}:3306"
     volumes:
       - ./init-olap:/docker-entrypoint-initdb.d
     restart: unless-stopped
@@ -107,7 +128,7 @@ services:
         # inicia cron em foreground
         crond -n
     networks:
-    - storage_network
+      - storage_network
 
 networks:
   storage_network:

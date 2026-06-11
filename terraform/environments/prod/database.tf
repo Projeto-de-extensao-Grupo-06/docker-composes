@@ -8,7 +8,7 @@ module "ec2_db" {
   instance_type        = "t3.large"
   vpc_id               = module.vpc_prod.vpc_id
   subnet_id            = module.vpc_prod.private_subnet_ids[2]
-  frontend_ports       = [3306, 6379]
+  frontend_ports       = [3306, 3308, 6379]
   allowed_cidr_blocks  = ["10.0.0.0/24"]
   iam_instance_profile = "LabInstanceProfile"
   user_data = <<-EOT
