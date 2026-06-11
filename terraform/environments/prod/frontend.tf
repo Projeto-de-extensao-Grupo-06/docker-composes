@@ -16,6 +16,7 @@ module "ec2_frontend_1" {
     base64 -d << 'EOF' > /tmp/setup-vm.sh
     ${base64encode(file("../../../scripts/setup-vm.sh"))}
     EOF
+    sed -i 's/\r$//' /tmp/setup-vm.sh
     export FRONTEND_TYPE="institutional"
     bash /tmp/setup-vm.sh
   EOT
@@ -37,6 +38,7 @@ module "ec2_frontend_2" {
     base64 -d << 'EOF' > /tmp/setup-vm.sh
     ${base64encode(file("../../../scripts/setup-vm.sh"))}
     EOF
+    sed -i 's/\r$//' /tmp/setup-vm.sh
     export FRONTEND_TYPE="management"
     bash /tmp/setup-vm.sh
   EOT

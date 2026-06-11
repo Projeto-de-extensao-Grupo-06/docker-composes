@@ -121,9 +121,20 @@ if grep -q "GITHUB_ACCESS_TOKEN" "$BASE_DIR/.env" 2>/dev/null; then
 fi
 
 sudo docker network create solarway_network || true
+
+# Detecta se deve usar "docker compose" ou "docker-compose"
+if sudo docker compose version >/dev/null 2>&1; then
+    COMPOSE_CMD="sudo docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_CMD="sudo docker-compose"
+else
+    echo "Erro: docker compose nao encontrado!"
+    exit 1
+fi
+
 # Subir o container do proxy
-echo "[PROD-PROXY] Iniciando container nginx-proxy..."
-sudo docker compose --env-file "$BASE_DIR/.env" up -d
+echo "[PROD-PROXY] Iniciando container nginx-proxy usando: $COMPOSE_CMD..."
+$COMPOSE_CMD --env-file "$BASE_DIR/.env" up -d
 
 echo "[PROD-PROXY] Nginx Proxy em operaÃ§Ã£o!"
 echo "   Healthcheck: curl http://localhost/health"
